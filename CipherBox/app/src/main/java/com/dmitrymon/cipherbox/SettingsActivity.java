@@ -34,12 +34,6 @@ import java.util.List;
  */
 public class SettingsActivity extends PreferenceActivity
 {
-
-    public static final String DEFAULT_PATH = "CipherBox/";
-    public static final String KEY_PREF_PATH = "storage_path_key";
-    public static final String KEY_CIPHER_FILENAMES = "cipher_file_names_key";
-    public static final boolean DEFAULT_CIPHER_FILENAMES = false;
-
     /**
      * A preference value change listener that updates the preference's summary
      * to reflect its new value.
@@ -64,34 +58,8 @@ public class SettingsActivity extends PreferenceActivity
                                 ? listPreference.getEntries()[index]
                                 : null);
 
-            } else if (preference instanceof RingtonePreference)
-            {
-                // For ringtone preferences, look up the correct display value
-                // using RingtoneManager.
-                if (TextUtils.isEmpty(stringValue))
-                {
-                    // Empty values correspond to 'silent' (no ringtone).
-                    preference.setSummary(R.string.pref_ringtone_silent);
-
-                } else
-                {
-                    Ringtone ringtone = RingtoneManager.getRingtone(
-                            preference.getContext(), Uri.parse(stringValue));
-
-                    if (ringtone == null)
-                    {
-                        // Clear the summary if there was a lookup error.
-                        preference.setSummary(null);
-                    } else
-                    {
-                        // Set the summary to reflect the new ringtone display
-                        // name.
-                        String name = ringtone.getTitle(preference.getContext());
-                        preference.setSummary(name);
-                    }
-                }
-
-            } else
+            }
+            else
             {
                 // For all other preferences, set the summary to the value's
                 // simple string representation.

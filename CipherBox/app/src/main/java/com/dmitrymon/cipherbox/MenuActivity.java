@@ -67,7 +67,7 @@ public class MenuActivity extends Activity
     String storagePath;
     StorageReader storageReader;
     boolean shouldKill = false;
-    boolean cipherFileNames = false;
+    boolean cipherFileNames = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -159,9 +159,12 @@ public class MenuActivity extends Activity
     private void getPreferences()
     {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-        String storageFolder = sharedPref.getString(SettingsActivity.KEY_PREF_PATH, SettingsActivity.DEFAULT_PATH);
+        String storagePathKey = getString(R.string.pref_storage_path_key);
+        String defaultPath = getString(R.string.pref_default_path);
+        String storageFolder = sharedPref.getString(storagePathKey, defaultPath);
         storagePath = Environment.getExternalStorageDirectory() + "/" + storageFolder;
-        cipherFileNames = sharedPref.getBoolean(SettingsActivity.KEY_CIPHER_FILENAMES, cipherFileNames);
+        String keyCipherFilenames = getString(R.string.pref_cipher_file_names_key);
+        cipherFileNames = sharedPref.getBoolean(keyCipherFilenames, cipherFileNames);
     }
 
     private void readStorage()
@@ -194,6 +197,7 @@ public class MenuActivity extends Activity
             }
         }
     }
+
 
     void showMessageImpossibleToCreateFolder()
     {
@@ -337,10 +341,7 @@ public class MenuActivity extends Activity
 
     void deleteFile(File file)
     {
-        // TODO Deleting agreement
-        file.delete();
-
-        readStorage();
+        FileProcessingActivity.deleteFile(this, file);
     }
 
     void invokeFileDecryptor(File file)

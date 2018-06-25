@@ -1,23 +1,28 @@
 package com.dmitrymon.cipherbox;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.v4.content.FileProvider;
 import android.util.Log;
 import android.view.Window;
 import android.webkit.MimeTypeMap;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.BufferedInputStream;
@@ -30,6 +35,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Random;
@@ -39,6 +46,7 @@ public class FileProcessingActivity extends Activity
     // Data for decrypting
     public static final String ACTION_DECRYPT = "com.dmitrymon.cipherbox.ACTION_DECRYPT";
     public static final String ACTION_ENCRYPT = "com.dmitrymon.cipherbox.ACTION_ENCRYPT";
+    public static final String ACTION_DELETE_FILE = "com.dmitrymon.ACTION_DELETE_FILE";
     public static final String DATA_PASSWORD = "com.dmitrymon.cipherbox.DATA_PROCESSING_PASSWORD";
     public static final String DATA_IV = "com.dmitrymon.cipherbox.DATA_IV";
     public static final String DATA_NAME_STRING = "com.dmitrymon.cipherbox.DATA_NAME_STRING";
@@ -48,15 +56,18 @@ public class FileProcessingActivity extends Activity
 
     public static final String FILENAME_ECNRYPTED_PREFIX = ".cb_";
 
-    public static final int BLOCK_SIZE = 1048576; // 1 Mb
+    public static int BLOCK_SIZE = 256 * 1024;
+    public static int BLOCK_SIZE_DELETION = 256 * 1024;
 
     private byte[] keyBytes;
     private byte[] ivBytes;
     private File lastEncryptedFile;
 
     private File extracted;
+    private File sourceFile;
     private boolean viewerStarted = false;
     boolean cipherNames = false;
+    boolean hideUnsafeDeletionOption = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -64,7 +75,22 @@ public class FileProcessingActivity extends Activity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_file_processing);
 
+        getSystemData();
+        getPreferences();
         processIntent(getIntent());
+    }
+
+    private void getSystemData()
+    {
+        //FileSystem fs = FileSystems.;
+
+    }
+
+    private void getPreferences()
+    {
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        String key = getString(R.string.pref_hide_unsafe_deletion_option_key);
+        hideUnsafeDeletionOption = sharedPref.getBoolean(key, true);
     }
 
     File DecryptFileName(File file)
@@ -168,6 +194,14 @@ public class FileProcessingActivity extends Activity
         context.startActivity(intent);
     }
 
+    public static void deleteFile(Activity invoker, File file)
+    {
+        Intent intent = new Intent(invoker, FileProcessingActivity.class);
+        intent.setAction(ACTION_DELETE_FILE);
+        intent.putExtra(DATA_NAME_STRING, file.getPath());
+        invoker.startActivity(intent);
+    }
+
     public static void outputFile(Activity context, File info, byte[] key, byte[] iv, boolean cipherNames)
     {
         Intent intent = new Intent(context, FileProcessingActivity.class);
@@ -217,6 +251,11 @@ public class FileProcessingActivity extends Activity
             Log.w("", "Some file was received!: " + intent.getDataString());
 
         }
+        else if(intent.getAction().equals(ACTION_DELETE_FILE))
+        {
+            File file = new File(filePath);
+            requestFileDeletion(file, R.string.deletion_dialog_on_permanent);
+        }
     }
 
     @Override
@@ -247,7 +286,7 @@ public class FileProcessingActivity extends Activity
 
     }
 
-    class SafeDeleteTask extends AsyncTask<File, Void, Void>
+    class SafeDeleteTask extends AsyncTask<File, Integer, Void>
     {
 
         boolean success = true;
@@ -258,18 +297,24 @@ public class FileProcessingActivity extends Activity
             toDelete = files[0];
             try
             {
-                byte[] block = new byte[1024 * 1024];
+                byte[] block = new byte[BLOCK_SIZE_DELETION];
                 for (int i = 0; i < block.length; i++)
                     block[i] = (byte) 0xFF;
 
-                int offset = 0;
-                int fileLen = (int) toDelete.length();
+                long offset = 0;
+                long fileLen = toDelete.length();
                 FileOutputStream writer = new FileOutputStream(toDelete);
+
+                setProgressBarValue(0);
+                float increment = (float)block.length / fileLen * 100;
+                float progress = 0;
 
                 while (offset < fileLen)
                 {
                     writer.write(block, 0, block.length);
                     offset += block.length;
+                    progress += increment;
+                    publishProgress((int)progress);
                 }
             }
             catch (IOException ex)
@@ -278,6 +323,12 @@ public class FileProcessingActivity extends Activity
                 ex.printStackTrace();
             }
             return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... progress)
+        {
+            setProgressBarValue(progress[0]);
         }
 
         @Override
@@ -301,7 +352,6 @@ public class FileProcessingActivity extends Activity
 
     class TransmitTask extends AsyncTask<TransmitterParams, Integer, Void>
     {
-
         int mode;
         boolean success = true;
         boolean shouldOpen;
@@ -407,18 +457,21 @@ public class FileProcessingActivity extends Activity
             if(!success)
             {
                 showMessageWrongKey();
-                deleteFile(extracted);
+                deleteFileSafely(extracted);
             }
             if(mode == 0)
             {
                 if(success && shouldOpen)
                     showExtractedFile();
-                else if(!shouldOpen)
-                    finish();
+                if(success && !shouldOpen)
+                {
+                    requestFileDeletion(sourceFile, R.string.deletion_dialog_on_permanent);
+                }
             }
             if(mode == 1 && success)
             {
-                deleteFile(lastEncryptedFile);
+                //deleteFile(lastEncryptedFile);
+                requestFileDeletion(lastEncryptedFile, R.string.deletion_dialog_on_adding);
             }
 
             //finish();
@@ -431,11 +484,59 @@ public class FileProcessingActivity extends Activity
         bar.setProgress(percent);
     }
 
-    private void deleteFile(File file)
+    private void deleteFileSafely(File file)
     {
-        /*if(lastEncryptedFile != null && lastEncryptedFile.exists())
-            lastEncryptedFile.delete();  */
+        TextView label = findViewById(R.id.progressBarLabel);
+        label.setText(R.string.file_processor_deleting);
         new SafeDeleteTask().execute(file);
+    }
+
+    private void deleteFileUnsafely(File file)
+    {
+        boolean deleted = file.delete();
+        if(!deleted)
+            Log.e("DELETING", "File not deleted");
+        finish();
+    }
+
+    private void requestFileDeletion(final File file, int messageId)
+    {
+        class PositiveListener implements DialogInterface.OnClickListener
+        {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i)
+            {
+                deleteFileSafely(file);
+            }
+        }
+
+        class NeutralListener implements DialogInterface.OnClickListener
+        {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i)
+            {
+                deleteFileUnsafely(file);
+            }
+        }
+
+        class NegativeListener implements DialogInterface.OnClickListener
+        {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i)
+            {
+                finish();
+            }
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setPositiveButton(R.string.deletion_dialog_yes, new PositiveListener());
+        if(!hideUnsafeDeletionOption)
+            builder.setNeutralButton(R.string.deletion_dialog_yes_unsafe, new NeutralListener());
+        builder.setNegativeButton(R.string.deletion_dialog_no, new NegativeListener());
+        builder.setMessage(messageId);
+        builder.setTitle(R.string.deletion_dialog_title);
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
     private void showMessageWrongKey()
@@ -475,6 +576,7 @@ public class FileProcessingActivity extends Activity
             File externalDirectory = Environment.getExternalStorageDirectory();
             String name = GetDecryptedName(encryptedFile, keyBytes, ivBytes);
             destFile = new File(externalDirectory, name);
+            param.shouldOpen = true;
         }
         else
         {
@@ -484,6 +586,7 @@ public class FileProcessingActivity extends Activity
         }
 
         extracted = destFile;
+        sourceFile = encryptedFile;
 
         try
         {
@@ -513,7 +616,8 @@ public class FileProcessingActivity extends Activity
         // TODO File deleting after opening
         super.onResume();
         if(viewerStarted)
-            new SafeDeleteTask().execute(extracted);
+            //deleteFile(extracted);
+            requestFileDeletion(extracted, R.string.deletion_dialog_on_tmp);
     }
 
     private void showExtractedFile()
@@ -535,8 +639,6 @@ public class FileProcessingActivity extends Activity
         intent.setDataAndType(uri, type);
 
         intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-        //intent.addCategory(Intent.CATEGORY_DEFAULT);
 
         try
         {

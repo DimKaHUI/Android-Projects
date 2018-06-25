@@ -11,28 +11,37 @@
     <string name="pref_header_general">General</string>
 
     <string name="pref_title_display_name">Display name</string>
-    <string name="pref_default_path">Cipher/</string>
-
-
-    <string name="pref_title_system_sync_settings">System sync settings</string>
-
-    <!-- Example settings for Notifications -->
-    <string name="pref_header_notifications">Notifications</string>
-
-    <string name="pref_title_new_message_notifications">New message notifications</string>
-
-    <string name="pref_title_ringtone">Ringtone</string>
-    <string name="pref_ringtone_silent">Silent</string>
+    <string name="pref_default_path" translatable="false">CipherBox/</string>
 
     <string name="prefs_button_text">Prefs</string>
     <string name="file_processing_text">Please wait...</string>
     <string name="add_button_text">Add new file</string>
-    <string name="permission_getter_label">Please, grant the following permission...</string>
+    <string name="permission_getter_label">Please, grant the following permission…</string>
     <string name="open_file_item">Open</string>
     <string name="decrypt_file_item">Decrypt and save</string>
     <string name="delete_file_item">Delete</string>
     <string name="info_login_iv_text">Initialization Vector:</string>
-    <string name="cipher_file_names_switch_summary">Cipher file names</string>
-    <string name="cipher_file_names_switch_title">File names</string>
+    <string name="cipher_file_names_switch_summary">Ciphering file names makes cryptanalysis
+    more difficult. Also it hides information about what you store. This option only
+    affects new files, already stored files will not change</string>
+    <string name="cipher_file_names_switch_title">Cipher file names</string>
     <string name="pref_path_display_name">Storage path</string>
+    <string name="deletion_dialog_yes">Yes (safe)</string>
+    <string name="deletion_dialog_no">No</string>
+    <string name="deletion_dialog_yes_unsafe">Yes(fast)</string>
+    <string name="deletion_dialog_title">Deleting file</string>
+    <string name="deletion_dialog_on_adding">Delete source file?</string>
+    <string name="deletion_dialog_on_tmp">Delete temp file?</string>
+    <string name="deletion_dialog_on_permanent">Delete file from CipherBox?</string>
+    <string name="file_chooser_select_this">Select this directory</string>
+    <string name="file_processor_processing">Processing…</string>
+    <string name="file_processor_deleting">Deleting…</string>
+    <string name="pref_hide_unsafe_deletion_title">Hide unsafe deletion option</string>
+    <string name="pref_hide_unsafe_deletion_summary">Safe deletion rewrites file with
+    nonsensical data. This process needs some time to be finished, but it makes file
+    restoration impossible. For safety reason it is strongly recommended not to use unsafe
+    deletion. Use this only if your files are really large.</string>
+    <string name="pref_hide_unsafe_deletion_option_key">hide_unsafe_deletion_option</string>
+    <string name="pref_cipher_file_names_key">cipher_file_names_key</string>
+    <string name="pref_storage_path_key">storage_path_key</string>
 </resources>

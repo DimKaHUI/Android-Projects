@@ -72,12 +72,12 @@ public class FileChooserActivity extends Activity
     }
 
     public static void invokeFileChooser(Activity invoker, File initialDir, int requestCode)
-    {
-        Intent intent = new Intent(invoker, FileChooserActivity.class);
-        intent.setAction(ACTION_PICK_FILE);
-        intent.putExtra(EXTRA_INITIAL_PATH, initialDir.getPath());
-        invoker.startActivityForResult(intent, requestCode);
-    }
+{
+    Intent intent = new Intent(invoker, FileChooserActivity.class);
+    intent.setAction(ACTION_PICK_FILE);
+    intent.putExtra(EXTRA_INITIAL_PATH, initialDir.getPath());
+    invoker.startActivityForResult(intent, requestCode);
+}
 
     public static void invokeFileChooser(Activity invoker, int requestCode)
     {
@@ -111,14 +111,6 @@ public class FileChooserActivity extends Activity
             addDefaultViews();
             currentDirectory = directory;
             listOfFiles = directory.listFiles();
-
-
-            // TODO Sorting
-            /*ArrayList<File> list = new ArrayList<File>();
-            for(File f: listOfFiles)
-                list.add(f);*/
-
-            //list.sort(new FileComparator(FileComparator.Mode.NAME, FileComparator.Direction.FROM_SMALLER_TO_BIGGER));
 
             if(listOfFiles != null)
             {
@@ -202,7 +194,7 @@ public class FileChooserActivity extends Activity
         {
             offset++;
             Button select = new Button(this);
-            select.setText("Select this directory");
+            select.setText(R.string.file_chooser_select_this);
             select.setBackgroundColor(Color.BLUE);
             select.setTextColor(Color.GREEN);
             select.setOnClickListener(new SelectButtonListener());
@@ -217,22 +209,6 @@ public class FileChooserActivity extends Activity
         offset++;
     }
 
-    View createView(File file)
-    {
-        Button button = new Button(this);
-        if(file.isFile())
-        {
-            button.setText(file.getName());
-        }
-        if(file.isDirectory())
-        {
-            button.setText(file.getName() + File.separator);
-            button.setTextColor(Color.BLUE);
-        }
-        button.setOnClickListener(new ButtonListener());
-        return button;
-    }
-
     View createFileButton(File file, String label)
     {
         FileButton button = new FileButton(this, file);
@@ -245,7 +221,7 @@ public class FileChooserActivity extends Activity
             button.setText(label + File.separator);
             button.setTextColor(Color.BLUE);
         }
-        button.setOnClickListener(new ButtonListener());
+        button.setOnClickListener(new FileButtonListener());
         return button;
     }
 
@@ -257,18 +233,6 @@ public class FileChooserActivity extends Activity
         finish();
     }
 
-    class ButtonListener implements View.OnClickListener
-    {
-
-        @Override
-        public void onClick(View v)
-        {
-            int index = listContainer.indexOfChild(v);
-            index -= offset;
-            File file = listOfFiles[index];
-            listFiles(file);
-        }
-    }
 
     class FileButtonListener implements View.OnClickListener
     {
@@ -297,56 +261,6 @@ public class FileChooserActivity extends Activity
         public void onClick(View v)
         {
             sendResult(currentDirectory);
-        }
-    }
-
-    static class FileComparator implements Comparator
-    {
-        enum Mode
-        {
-            NAME, DATE, SIZE
-        }
-
-        enum Direction
-        {
-            FROM_SMALLER_TO_BIGGER, FROM_BIGGER_TO_SMALLER
-        }
-
-        Mode mode;
-        Direction direction;
-
-        FileComparator(Mode mode, Direction direction)
-        {
-            this.mode = mode;
-            this.direction = direction;
-        }
-
-        @Override
-        public int compare(Object o1, Object o2)
-        {
-            File f1 = (File)o1;
-            File f2 = (File)o2;
-
-            switch (mode)
-            {
-                case NAME:
-                    if(direction == Direction.FROM_SMALLER_TO_BIGGER)
-                        return compareStrings(f1.getName(), f2.getName());
-                    else
-                        return -compareStrings(f1.getName(), f2.getName());
-                case DATE:
-                    throw new IllegalArgumentException();
-
-                case SIZE:
-                    throw new IllegalArgumentException();
-            }
-
-            return 0;
-        }
-
-        private int compareStrings(String s1, String s2)
-        {
-            return s1.compareTo(s2);
         }
     }
 }

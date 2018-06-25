@@ -1,8 +1,14 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
     <SwitchPreference
-        android:defaultValue="false"
-        android:key="cipher_file_names_key"
+        android:defaultValue = "true"
+        android:key="@string/pref_hide_unsafe_deletion_option_key"
+        android:title="@string/pref_hide_unsafe_deletion_title"
+        android:summary="@string/pref_hide_unsafe_deletion_summary"
+        />
+    <SwitchPreference
+        android:defaultValue="true"
+        android:key="@string/pref_cipher_file_names_key"
         android:summary="@string/cipher_file_names_switch_summary"
         android:title="@string/cipher_file_names_switch_title" />
 
@@ -12,7 +18,7 @@
         android:capitalize="words"
         android:defaultValue="@string/pref_default_path"
         android:inputType="textCapWords"
-        android:key="storage_path_key"
+        android:key="@string/pref_storage_path_key"
         android:maxLines="1"
         android:selectAllOnFocus="true"
         android:singleLine="true"

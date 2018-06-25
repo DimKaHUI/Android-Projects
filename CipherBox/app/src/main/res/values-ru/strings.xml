@@ -16,7 +16,23 @@
     <string name="decrypt_file_item">Расшифровать</string>
     <string name="delete_file_item">Удалить</string>
     <string name="info_login_iv_text">Вектор инициализации:</string>
-    <string name="cipher_file_names_switch_summary">Шифровать имена файлов</string>
-    <string name="cipher_file_names_switch_title">Имена файлов</string>
+    <string name="cipher_file_names_switch_summary">Шифрование имён файлов делает криптоанализ
+    ещё более трудемким. Также это скрывает информацию о том, что именно вы храните. Эта опция
+    влияет только на новодобавляемые файлы, файлы, которые уже были в хранилище не изменятся</string>
+    <string name="cipher_file_names_switch_title">Шифровать имена файлов</string>
     <string name="pref_path_display_name">Путь к хранилищу</string>
+    <string name="deletion_dialog_yes">Да (безопасно)</string>
+    <string name="deletion_dialog_no">Нет</string>
+    <string name="deletion_dialog_yes_unsafe">Да (быстро)</string>
+    <string name="deletion_dialog_on_adding">Удалить исходный файл?</string>
+    <string name="deletion_dialog_on_tmp">Удалить временный файл?</string>
+    <string name="deletion_dialog_on_permanent">Убрать файл из шифрованного хранилища?</string>
+    <string name="file_chooser_select_this">Выбрать текущий каталог</string>
+    <string name="file_processor_processing">Обработка…</string>
+    <string name="file_processor_deleting">Безопасное удаление…</string>
+    <string name="pref_hide_unsafe_deletion_title">Скрыть опцию небезопасного удаления</string>
+    <string name="pref_hide_unsafe_deletion_summary">Безопасное удаление перезаписывает файл
+    бессмысленними данными, что делает его восстановление невозможным. Этот процесс требует
+    некоторого количества времени для выполнения. Рекомендуется не пользоваться небезопасным
+    удалением. Этот вариант приемлим только при удалении весьма больших файлов</string>
 </resources>
