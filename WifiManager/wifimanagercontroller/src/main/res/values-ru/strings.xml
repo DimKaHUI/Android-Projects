@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WifiManagerController</string>
+    <string name="highPriorSsidText">SSID с высоким приоритетом:</string>
+    <string name="lowPriorSsidText">SSID с низким приоритетом:</string>
+    <string name="startButtonText">Запустить</string>
+    <string name="stopButtonText">Остановить</string>
+</resources>

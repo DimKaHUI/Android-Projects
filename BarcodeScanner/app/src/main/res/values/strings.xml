@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">BarcodeScanner</string>
+    <string name="camera_io_error_msg">Camera is unavailable</string>
+    <string name="camera_permission_denied_msg">App has no permission for using camera</string>
+    <string name="exit_button_text">EXIT</string>
+    <string name="file_saving_err_msg">Unable to save file</string>
+</resources>

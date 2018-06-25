@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BarcodeScanner</string>
+    <string name="camera_io_error_msg">Камера недоступна</string>
+    <string name="camera_permission_denied_msg">У приложения нет разрешения на использование
+    камеры</string>
+    <string name="exit_button_text">ВЫХОД</string>
+</resources>

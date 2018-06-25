@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/open_item"
+        android:title="@string/open_file_item"
+        app:actionProviderClass="android.support.v7.app.MediaRouteActionProvider"
+         />
+    <item
+        android:id="@+id/decrypt_item"
+        android:title="@string/decrypt_file_item"
+        app:actionProviderClass="android.support.v7.app.MediaRouteActionProvider"
+        />
+    <item
+        android:id="@+id/delete_item"
+        android:title="@string/delete_file_item"
+        app:actionProviderClass="android.support.v7.app.MediaRouteActionProvider"
+        />
+</menu>

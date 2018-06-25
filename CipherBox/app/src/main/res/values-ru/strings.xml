@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CipherBox</string>
+    <string name="login_button_text">Войти в хранилище</string>
+    <string name="info_login_text">Пароль:</string>
+    <string name="title_activity_menu">Выберите элемент:</string>
+    <string name="title_activity_settings">Настройки</string>
+    <string name="pref_header_general">Общие</string>
+    <string name="pref_title_social_recommendations">Включить рекомендации</string>
+    <string name="pref_title_display_name">Имя</string>
+    <string name="prefs_button_text">Настройки</string>
+    <string name="file_processing_text">Подождите, пожалуйста…</string>
+    <string name="add_button_text">Добавить файл</string>
+    <string name="permission_getter_label">"Пожалуйста, дайте приложению следующее разрешение: "</string>
+    <string name="open_file_item">Открыть</string>
+    <string name="decrypt_file_item">Расшифровать</string>
+    <string name="delete_file_item">Удалить</string>
+    <string name="info_login_iv_text">Вектор инициализации:</string>
+    <string name="cipher_file_names_switch_summary">Шифровать имена файлов</string>
+    <string name="cipher_file_names_switch_title">Имена файлов</string>
+    <string name="pref_path_display_name">Путь к хранилищу</string>
+</resources>

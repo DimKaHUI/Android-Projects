@@ -1,0 +1,38 @@
+<resources>
+    <string name="app_name">CipherBox</string>
+    <string name="login_button_text">Login</string>
+    <string name="info_login_text">Password:</string>
+    <string name="title_activity_menu">Choose element:</string>
+    <string name="title_activity_settings">Settings</string>
+
+    <!-- Strings related to Settings -->
+
+    <!-- Example General settings -->
+    <string name="pref_header_general">General</string>
+
+    <string name="pref_title_display_name">Display name</string>
+    <string name="pref_default_path">Cipher/</string>
+
+
+    <string name="pref_title_system_sync_settings">System sync settings</string>
+
+    <!-- Example settings for Notifications -->
+    <string name="pref_header_notifications">Notifications</string>
+
+    <string name="pref_title_new_message_notifications">New message notifications</string>
+
+    <string name="pref_title_ringtone">Ringtone</string>
+    <string name="pref_ringtone_silent">Silent</string>
+
+    <string name="prefs_button_text">Prefs</string>
+    <string name="file_processing_text">Please wait...</string>
+    <string name="add_button_text">Add new file</string>
+    <string name="permission_getter_label">Please, grant the following permission...</string>
+    <string name="open_file_item">Open</string>
+    <string name="decrypt_file_item">Decrypt and save</string>
+    <string name="delete_file_item">Delete</string>
+    <string name="info_login_iv_text">Initialization Vector:</string>
+    <string name="cipher_file_names_switch_summary">Cipher file names</string>
+    <string name="cipher_file_names_switch_title">File names</string>
+    <string name="pref_path_display_name">Storage path</string>
+</resources>
