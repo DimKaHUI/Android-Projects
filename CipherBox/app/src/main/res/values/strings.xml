@@ -41,7 +41,12 @@
     nonsensical data. This process needs some time to be finished, but it makes file
     restoration impossible. For safety reason it is strongly recommended not to use unsafe
     deletion. Use this only if your files are really large.</string>
-    <string name="pref_hide_unsafe_deletion_option_key">hide_unsafe_deletion_option</string>
-    <string name="pref_cipher_file_names_key">cipher_file_names_key</string>
-    <string name="pref_storage_path_key">storage_path_key</string>
+    <string name="pref_hide_unsafe_deletion_option_key" translatable="false">hide_unsafe_deletion_option</string>
+    <string name="pref_cipher_file_names_key" translatable="false">cipher_file_names_key</string>
+    <string name="pref_storage_path_key" translatable="false">storage_path_key</string>
+    <string name="file_add_dialog_ok">OK</string>
+    <string name="file_add_dialog_title">Adding file</string>
+    <string name="file_add_dialog_password">Password:</string>
+    <string name="file_add_dialog_iv">IV</string>
+    <string name="file_add_dialog_permission_error">Permissions not granted! Launch CipherBox and grant permissions</string>
 </resources>

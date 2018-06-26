@@ -1,45 +1,32 @@
 package com.dmitrymon.cipherbox;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.ContentProvider;
-import android.content.ContentResolver;
-import android.content.ContentUris;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
-import android.provider.MediaStore;
 import android.support.v4.content.FileProvider;
 import android.util.Log;
-import android.view.Window;
 import android.webkit.MimeTypeMap;
+import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Random;
 
 public class FileProcessingActivity extends Activity
 {
@@ -54,7 +41,7 @@ public class FileProcessingActivity extends Activity
     public static final String DATA_IS_PERMANENT = "com.dmitrymon.cipherbox.DATA_IS_PERMANENT";
     public static final String DATA_CIPHER_NAMES = "com.dmitrymon.cipherbox.DATA_CIPHER_NAMES";
 
-    public static final String FILENAME_ECNRYPTED_PREFIX = ".cb_";
+    public static final String FILENAME_ENCRYPTED_PREFIX = ".cb_";
 
     public static int BLOCK_SIZE = 256 * 1024;
     public static int BLOCK_SIZE_DELETION = 256 * 1024;
@@ -68,7 +55,7 @@ public class FileProcessingActivity extends Activity
     private boolean viewerStarted = false;
     private boolean cipherNames = false;
     private boolean hideUnsafeDeletionOption = true;
-    private ProgressBar bar = findViewById(R.id.progressBar);
+    private ProgressBar bar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -76,6 +63,7 @@ public class FileProcessingActivity extends Activity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_file_processing);
 
+        bar = findViewById(R.id.progressBar);
         getSystemData();
         getPreferences();
         processIntent(getIntent());
@@ -94,14 +82,14 @@ public class FileProcessingActivity extends Activity
         hideUnsafeDeletionOption = sharedPref.getBoolean(key, true);
     }
 
-    File DecryptFileName(File file)
+    static File DecryptFileName(File file, byte[] keyBytes, byte[] ivBytes)
     {
         try
         {
             Cryptor cryptor = new Cryptor(keyBytes, ivBytes, Cryptor.Mode.DECRYPTING);
             String sourceFileName = file.getName();
-            String replFileName = sourceFileName.replace(FILENAME_ECNRYPTED_PREFIX, "");
-            if(sourceFileName.startsWith(FILENAME_ECNRYPTED_PREFIX))
+            String replFileName = sourceFileName.replace(FILENAME_ENCRYPTED_PREFIX, "");
+            if(sourceFileName.startsWith(FILENAME_ENCRYPTED_PREFIX))
             {
                 try
                 {
@@ -131,13 +119,13 @@ public class FileProcessingActivity extends Activity
         return file;
     }
 
-    public static String GetDecryptedName(File file, byte[] keyBytes, byte[] ivBytes)
+    static String GetDecryptedName(File file, byte[] keyBytes, byte[] ivBytes)
     {
         String sourceFileName = file.getName();
-        String result = sourceFileName.replace(FILENAME_ECNRYPTED_PREFIX, "");
+        String result = sourceFileName.replace(FILENAME_ENCRYPTED_PREFIX, "");
         try
         {
-            if(sourceFileName.startsWith(FILENAME_ECNRYPTED_PREFIX))
+            if(sourceFileName.startsWith(FILENAME_ENCRYPTED_PREFIX))
             {
                 Cryptor cryptor = new Cryptor(keyBytes, ivBytes, Cryptor.Mode.DECRYPTING);
                 byte[] name = android.util.Base64.decode(result, android.util.Base64.NO_WRAP | android.util.Base64.URL_SAFE);
@@ -163,15 +151,18 @@ public class FileProcessingActivity extends Activity
         return result;
     }
 
-    File EncryptFileName(File file)
+    static File EncryptFileName(File file, byte[] keyBytes, byte[] ivBytes)
     {
+        String fileName = file.getName();
+        if(fileName.startsWith(FILENAME_ENCRYPTED_PREFIX))
+            return file;
         try
         {
             Cryptor cryptor = new Cryptor(keyBytes, ivBytes, Cryptor.Mode.ENCRYPTING);
             byte[] plain = file.getName().getBytes();
             byte[] encrypted = cryptor.doFinal(plain);
             String encoded = android.util.Base64.encodeToString(encrypted, android.util.Base64.NO_WRAP | android.util.Base64.URL_SAFE);
-            File renamed = new File(file.getParentFile(), FILENAME_ECNRYPTED_PREFIX + encoded);
+            File renamed = new File(file.getParentFile(), FILENAME_ENCRYPTED_PREFIX + encoded);
             if(file.renameTo(renamed))
                 file = renamed;
         }
@@ -246,10 +237,13 @@ public class FileProcessingActivity extends Activity
             else
                 extractFileFromStorage(filePath, new File(destinationPath));
         }
-        else if(intent.getAction().equals(Intent.ACTION_SEND))
+        else if(intent.getAction().equals(Intent.ACTION_VIEW))
         {
-            Log.w("", "Some file was received!: " + intent.getDataString());
-
+            Uri content = intent.getData();
+            if(content != null)
+                addFileFromUri(content);
+            else
+                finish();
         }
         else if(intent.getAction().equals(ACTION_DELETE_FILE))
         {
@@ -264,12 +258,81 @@ public class FileProcessingActivity extends Activity
         super.onStop();
     }
 
+    private void addFileFromUri(Uri uri)
+    {
+
+        Log.v("FileProcessingActivity", uri.toString());
+        String path = uri.getPath();
+        final File source = new File(path);
+        final Activity context = this;
+        final EditText passwordBox = new EditText(this), ivBox = new EditText(this);
+
+        class IvListener implements DialogInterface.OnClickListener
+        {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i)
+            {
+                keyBytes = PasswordProcessor.GetKey(passwordBox.getText().toString());
+                ivBytes = PasswordProcessor.GetKey(ivBox.getText().toString());
+                SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+                String storagePath = sharedPref.getString(getString(R.string.pref_storage_path_key), getString(R.string.pref_default_path));
+                File extStorage = new File(Environment.getExternalStorageDirectory(), storagePath);
+                File destination = new File(extStorage, source.getName());
+                try
+                {
+                    if(destination.createNewFile());
+                        addFileToStorage(source, destination);
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                    finish();
+                }
+            }
+        }
+
+        class PasswordListener implements DialogInterface.OnClickListener
+        {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i)
+            {
+                AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                builder.setPositiveButton(R.string.file_add_dialog_ok, new IvListener());
+                builder.setView(ivBox);
+                builder.setCancelable(false);
+                builder.setMessage(R.string.file_add_dialog_iv);
+                builder.setTitle(R.string.file_add_dialog_title);
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            }
+        }
+
+        if(checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED ||
+                checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+        {
+            Toast.makeText(this, R.string.file_add_dialog_permission_error, Toast.LENGTH_SHORT).show();
+        }
+        else
+        {
+            AlertDialog.Builder builder = new AlertDialog.Builder(context);
+            builder.setPositiveButton(R.string.file_add_dialog_ok, new PasswordListener());
+
+            builder.setView(passwordBox);
+
+            builder.setCancelable(false);
+            builder.setMessage(R.string.file_add_dialog_password);
+            builder.setTitle(R.string.file_add_dialog_title);
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        }
+    }
+
     private void addFileToStorage(File sourceFile, File destinationFile)
     {
         TransmitterParams params = new TransmitterParams();
 
         if(cipherNames)
-            destinationFile = EncryptFileName(destinationFile);
+            destinationFile = EncryptFileName(destinationFile, keyBytes, ivBytes);
 
         try
         {
@@ -283,7 +346,6 @@ public class FileProcessingActivity extends Activity
         {
             e.printStackTrace();
         }
-
     }
 
     class SafeDeleteTask extends AsyncTask<File, Integer, Void>
@@ -345,7 +407,8 @@ public class FileProcessingActivity extends Activity
                 Toast t = Toast.makeText(getApplicationContext(), "IOException occured!", Toast.LENGTH_SHORT);
                 t.show();
             }
-            //finish();
+            if(success)
+                finish();
         }
     }
 
@@ -356,7 +419,6 @@ public class FileProcessingActivity extends Activity
         boolean success = true;
         boolean shouldOpen;
 
-        // TODO Correct offsets of storage
         @Override
         protected Void doInBackground(TransmitterParams... params)
         {
@@ -532,6 +594,7 @@ public class FileProcessingActivity extends Activity
         if(!hideUnsafeDeletionOption)
             builder.setNeutralButton(R.string.deletion_dialog_yes_unsafe, new NeutralListener());
         builder.setNegativeButton(R.string.deletion_dialog_no, new NegativeListener());
+        builder.setCancelable(false);
         builder.setMessage(messageId);
         builder.setTitle(R.string.deletion_dialog_title);
         AlertDialog dialog = builder.create();
@@ -612,10 +675,8 @@ public class FileProcessingActivity extends Activity
     @Override
     protected void onResume()
     {
-        // TODO File deleting after opening
         super.onResume();
         if(viewerStarted)
-            //deleteFile(extracted);
             requestFileDeletion(extracted, R.string.deletion_dialog_on_tmp);
     }
 
@@ -627,7 +688,7 @@ public class FileProcessingActivity extends Activity
 
         if(cipherNames)
         {
-            extracted = DecryptFileName(extracted);
+            extracted = DecryptFileName(extracted, keyBytes, ivBytes);
         }
 
         Uri uri = FileProvider.getUriForFile(this,
@@ -664,14 +725,6 @@ public class FileProcessingActivity extends Activity
         finish();
     }
 
-    private void handleIoException()
-    {
-        // TODO handleIoException
-        Log.e(FileProcessingActivity.class.getName(), "IO Exception!");
-        setResult(RESULT_CANCELED);
-        finish();
-    }
-
     private void showMessageNoActivity()
     {
         Toast toast = Toast.makeText(this, "No activity to open this file!", Toast.LENGTH_LONG);
@@ -680,7 +733,6 @@ public class FileProcessingActivity extends Activity
 
     private void handleInvalidKeySize()
     {
-        // TODO handleInvalidKeySize
         Log.e(FileProcessingActivity.class.getName(), "Invalid key size!");
         setResult(RESULT_CANCELED);
         finish();

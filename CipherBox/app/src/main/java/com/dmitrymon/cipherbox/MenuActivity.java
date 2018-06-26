@@ -60,12 +60,12 @@ public class MenuActivity extends Activity
     private static final int PROCESS_FILE_REQUEST_CODE = 127;
     private static final int DECRYPT_FILE_REQUEST_CODE = 128;
     private static final int OPEN_DIRECTORY_REQUEST_CODE = 129;
+    private static final int PREFS_REQUEST_CODE = 130;
 
     // Data for encryption/decryption
     private byte[] keyBytes;
     private byte[] ivBytes;
     String storagePath;
-    StorageReader storageReader;
     boolean shouldKill = false;
     boolean cipherFileNames = true;
 
@@ -80,8 +80,12 @@ public class MenuActivity extends Activity
         setupLayout();
         getPreferences();
         processIntent(getIntent());
+
         if(granted)
+        {
+            processFileNames(new File(storagePath));
             readStorage();
+        }
     }
 
     @Override
@@ -167,12 +171,25 @@ public class MenuActivity extends Activity
         cipherFileNames = sharedPref.getBoolean(keyCipherFilenames, cipherFileNames);
     }
 
+    private File[] getFilesFromStorage(File directory) throws Exception
+    {
+        if(!directory.exists())
+        {
+            boolean created = directory.mkdir();
+            if(!created)
+            {
+                throw new Exception("Impossible to create directory");
+            }
+        }
+
+        return directory.listFiles();
+    }
+
     private void readStorage()
     {
-        storageReader = new StorageReader(storagePath);
         try
         {
-            fileInfos = storageReader.ReadStorage();
+            fileInfos = getFilesFromStorage(new File(storagePath));
         }
         catch (Exception ex)
         {
@@ -194,6 +211,25 @@ public class MenuActivity extends Activity
             {
                 View element = generateView(fileInfos[i], decryptedFileNames[i]);
                 linearLayout.addView(element);
+            }
+        }
+    }
+
+    private void processFileNames(File directory)
+    {
+        File[] files = directory.listFiles();
+        if(cipherFileNames)
+        {
+            for (File file : files)
+            {
+                FileProcessingActivity.EncryptFileName(file, keyBytes, ivBytes);
+            }
+        }
+        else
+        {
+            for (File file : files)
+            {
+                FileProcessingActivity.DecryptFileName(file, keyBytes, ivBytes);
             }
         }
     }
@@ -390,6 +426,13 @@ public class MenuActivity extends Activity
             }
         }
 
+        if(requestCode == PREFS_REQUEST_CODE)
+        {
+            getPreferences();
+            processFileNames(new File(storagePath));
+            Log.v("FILENAMES", "File names");
+        }
+
     }
 
     private void invokeFileAdderActivity(String path, String destinationName)
@@ -434,7 +477,7 @@ public class MenuActivity extends Activity
     void invokePrefsActivity()
     {
         Intent intent = new Intent(this, SettingsActivity.class);
-        startActivity(intent);
+        startActivityForResult(intent, PREFS_REQUEST_CODE);
     }
 
 
