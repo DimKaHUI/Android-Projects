@@ -17,18 +17,13 @@ import javax.crypto.ShortBufferException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-public final class Cryptor
+public class Cryptor
 {
-    public  static final String ALGORITHM_NAME = "AES";
-    public  static final String ALGORITHM_MODE = "CBC";
-    public  static final String ALGORITHM_PADDING = "PKCS5Padding";
+    protected static String ALGORITHM_NAME = "AES";
+    protected static String ALGORITHM_MODE = "CBC";
+    protected static String ALGORITHM_PADDING = "PKCS5Padding";
 
     private Cipher cipher;
-
-    public class WrongKey extends Exception
-    {
-
-    }
 
     public class InvalidKeySize extends Exception
     {
@@ -49,6 +44,43 @@ public final class Cryptor
     public enum Mode
     {
         DECRYPTING, ENCRYPTING
+    }
+
+    public Cryptor()
+    {
+
+    }
+
+    public Cryptor(byte[] keyBytes, Mode mode) throws InvalidKeySize
+    {
+        SecretKeySpec secretKeySpec = new SecretKeySpec(keyBytes, ALGORITHM_NAME);
+        try
+        {
+            cipher = Cipher.getInstance(ALGORITHM_NAME + "/" + ALGORITHM_MODE + "/" + ALGORITHM_PADDING);
+            switch (mode)
+            {
+                case DECRYPTING:
+                    cipher.init(Cipher.DECRYPT_MODE, secretKeySpec);
+                    break;
+                case ENCRYPTING:
+                    cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec);
+                    break;
+            }
+        }
+        catch (NoSuchAlgorithmException ex)
+        {
+            // TODO Suppressing impossible error
+            ex.printStackTrace();
+        }
+        catch (NoSuchPaddingException ex)
+        {
+            // TODO Suppressing impossible error
+            ex.printStackTrace();
+        }
+        catch (InvalidKeyException ex)
+        {
+            throw new InvalidKeySize(ex.getMessage());
+        }
     }
 
     public Cryptor(byte[] keyBytes, byte[] ivBytes, Mode mode) throws InvalidKeySize
@@ -87,11 +119,6 @@ public final class Cryptor
             e.printStackTrace();
             throw new InvalidKeySize(e.getMessage());
         }
-    }
-
-    public int getOutputSize(int inputLen)
-    {
-        return cipher.getOutputSize(inputLen);
     }
 
     public byte[] update(byte block[])
