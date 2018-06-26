@@ -32,7 +32,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
+                <!--<category android:name="android.intent.category.BROWSABLE" />-->
                 <data android:scheme="file" />
                 <data android:mimeType="*/*" />
             </intent-filter>
@@ -41,7 +41,7 @@
 
         <activity android:name=".PermissionGetter" />
         <activity android:name=".FileChooserActivity" />
-        <activity android:name=".ErrorSenderActivity"></activity>
+        <activity android:name=".ErrorSenderActivity" />
 
         <provider
             android:name="android.support.v4.content.FileProvider"
