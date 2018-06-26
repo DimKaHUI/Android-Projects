@@ -345,7 +345,7 @@ public class FileProcessingActivity extends Activity
                 Toast t = Toast.makeText(getApplicationContext(), "IOException occured!", Toast.LENGTH_SHORT);
                 t.show();
             }
-            finish();
+            //finish();
         }
     }
 
@@ -384,17 +384,17 @@ public class FileProcessingActivity extends Activity
                 long blockSize = BLOCK_SIZE;
                 long count = fileLength / blockSize;
                 long offset = 0;
-                long thresold = blockSize * count;
+                long threshold = blockSize * count;
 
-                if(thresold == fileLength)
+                if(threshold == fileLength)
                 {
-                    thresold -= blockSize;
+                    threshold -= blockSize;
                 }
 
                 double progress = 0;
                 double progressIncrement = (double)blockSize / fileLength * 100.0f;
 
-                for(; offset < thresold; offset += blockSize)
+                for(; offset < threshold; offset += blockSize)
                 {
                     byte[] block = new byte[(int)blockSize];
                     reader.read(block, 0, (int)blockSize);
@@ -413,11 +413,11 @@ public class FileProcessingActivity extends Activity
                     publishProgress((int)progress);
                 }
 
-                long delta = fileLength - thresold;
+                long delta = fileLength - threshold;
 
                 byte[] finalBlock = new byte[(int)delta];
                 reader.read(finalBlock, 0, finalBlock.length);
-                byte[] encryptedFinalBlock =  cryptor.doFinal(finalBlock);
+                byte[] encryptedFinalBlock = cryptor.doFinal(finalBlock);
                 if(encryptedFinalBlock == null)
                     success = false;
                 else
