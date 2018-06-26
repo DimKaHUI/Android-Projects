@@ -66,8 +66,9 @@ public class FileProcessingActivity extends Activity
     private File extracted;
     private File sourceFile;
     private boolean viewerStarted = false;
-    boolean cipherNames = false;
-    boolean hideUnsafeDeletionOption = true;
+    private boolean cipherNames = false;
+    private boolean hideUnsafeDeletionOption = true;
+    private ProgressBar bar = findViewById(R.id.progressBar);
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -132,10 +133,10 @@ public class FileProcessingActivity extends Activity
 
     public static String GetDecryptedName(File file, byte[] keyBytes, byte[] ivBytes)
     {
+        String sourceFileName = file.getName();
+        String result = sourceFileName.replace(FILENAME_ECNRYPTED_PREFIX, "");
         try
         {
-            String sourceFileName = file.getName();
-            String result = sourceFileName.replace(FILENAME_ECNRYPTED_PREFIX, "");
             if(sourceFileName.startsWith(FILENAME_ECNRYPTED_PREFIX))
             {
                 Cryptor cryptor = new Cryptor(keyBytes, ivBytes, Cryptor.Mode.DECRYPTING);
@@ -149,18 +150,17 @@ public class FileProcessingActivity extends Activity
                         result = file.getName();
                 }
             }
-            return result;
+            //return result;
         }
         catch (Cryptor.InvalidKeySize invalidKeySize)
         {
             invalidKeySize.printStackTrace();
-            return file.getName();
         }
         catch (IllegalArgumentException ex)
         {
             ex.printStackTrace();
-            return file.getName();
         }
+        return result;
     }
 
     File EncryptFileName(File file)
@@ -480,7 +480,6 @@ public class FileProcessingActivity extends Activity
 
     private void setProgressBarValue(int percent)
     {
-        ProgressBar bar = findViewById(R.id.progressBar);
         bar.setProgress(percent);
     }
 
