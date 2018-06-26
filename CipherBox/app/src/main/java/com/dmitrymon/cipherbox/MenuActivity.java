@@ -50,11 +50,6 @@ public class MenuActivity extends Activity
     String[] decryptedFileNames;
     File extracted;
 
-    // Data for logging in
-    public static final String ACTION_LOGIN = "com.dmitrymon.cipherbox.ACTION_LOGIN";
-    public static final String DATA_PASSWORD = "com.dmitrymon.cipherbox.DATA_PASSWORD";
-    public static final String DATA_IV = "com.dmitrymon.cipherbox.DATA_IV";
-
     private static final int OPEN_DOCUMENT_REQUEST_CODE = 125;
     private static final int GET_PERMISSIONS_REQUEST_CODE = 126;
     private static final int PROCESS_FILE_REQUEST_CODE = 127;
@@ -151,9 +146,9 @@ public class MenuActivity extends Activity
     {
         switch (Objects.requireNonNull(intent.getAction()))
         {
-            case ACTION_LOGIN:
-                keyBytes = intent.getByteArrayExtra(DATA_PASSWORD);
-                ivBytes = intent.getByteArrayExtra(DATA_IV);
+            case LoginActivity.ACTION_LOGIN:
+                keyBytes = intent.getByteArrayExtra(LoginActivity.DATA_PASSWORD);
+                ivBytes = intent.getByteArrayExtra(LoginActivity.DATA_IV);
                 break;
             default:
                 // TODO No such action. Aborting

@@ -11,15 +11,27 @@ import android.widget.EditText;
 
 public class LoginActivity extends Activity
 {
+    public static final String ACTION_LOGIN = "com.dmitrymon.cipherbox.ACTION_LOGIN";
+
+    // Data for logging in
+    public static final String DATA_IV = "com.dmitrymon.cipherbox.DATA_IV";
+    public static final String DATA_PASSWORD = "com.dmitrymon.cipherbox.DATA_PASSWORD";
+
+    private static final String ACTION_GET_LOGIN_DATA = "com.dmitrymon.cipherbox.ACTION_GET_LOGIN_DATA";
+
     Button loginButton;
     EditText passwordInput;
     EditText ivInput;
+
+    boolean exportData = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        processIntent(getIntent());
 
         setupLayout();
     }
@@ -38,7 +50,7 @@ public class LoginActivity extends Activity
         ivInput = findViewById(R.id.ivInput);
     }
 
-    class ButtonListener implements View.OnClickListener
+    private class ButtonListener implements View.OnClickListener
     {
 
         @Override
@@ -46,20 +58,56 @@ public class LoginActivity extends Activity
         {
             if(v == loginButton)
             {
-                invokeMenuActivity();
+                sendData();
             }
         }
     }
 
-    void invokeMenuActivity()
+    private void sendData()
     {
-        Intent intent = new Intent(this, MenuActivity.class);
-        intent.setAction(MenuActivity.ACTION_LOGIN);
-        String password = new StringBuilder(passwordInput.getText()).toString();
-        String iv = new StringBuilder(ivInput.getText()).toString();
-        //Log.v(LoginActivity.class.getName(), "Sending password: " + password);
-        intent.putExtra(MenuActivity.DATA_PASSWORD, PasswordProcessor.GetKey(password));
-        intent.putExtra(MenuActivity.DATA_IV, PasswordProcessor.GetIV(iv));
-        startActivity(intent);
+        Intent intent;
+
+        if(!exportData)
+        {
+            intent = new Intent(this, MenuActivity.class);
+        }
+        else
+        {
+            intent = new Intent();
+        }
+
+        String password = passwordInput.getText().toString();
+        String iv = ivInput.getText().toString();
+        intent.putExtra(DATA_PASSWORD, PasswordProcessor.GetKey(password));
+        intent.putExtra(DATA_IV, PasswordProcessor.GetIV(iv));
+
+        if(!exportData)
+        {
+            intent.setAction(ACTION_LOGIN);
+            startActivity(intent);
+        }
+        else
+        {
+            setResult(RESULT_OK, intent);
+            finish();
+        }
+    }
+
+    private void processIntent(Intent intent)
+    {
+        String action = intent.getAction();
+        if(action == null)
+            return;
+        if(action.equals(ACTION_GET_LOGIN_DATA))
+        {
+            exportData = true;
+        }
+    }
+
+    public static void requestLoginData(Activity invoker, int requestCode)
+    {
+        Intent intent = new Intent(invoker, LoginActivity.class);
+        intent.setAction(ACTION_GET_LOGIN_DATA);
+        invoker.startActivityForResult(intent, requestCode);
     }
 }

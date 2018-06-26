@@ -1,13 +1,11 @@
 package com.dmitrymon.cipherbox;
 
-import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -16,7 +14,6 @@ import android.preference.PreferenceManager;
 import android.support.v4.content.FileProvider;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
-import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -46,6 +43,7 @@ public class FileProcessingActivity extends Activity
     public static int BLOCK_SIZE = 256 * 1024;
     public static int BLOCK_SIZE_DELETION = 256 * 1024;
 
+    private static int LOGIN_REQUEST_CODE = 123;
     private byte[] keyBytes;
     private byte[] ivBytes;
     private File lastEncryptedFile;
@@ -263,71 +261,31 @@ public class FileProcessingActivity extends Activity
 
         Log.v("FileProcessingActivity", uri.toString());
         String path = uri.getPath();
-        final File source = new File(path);
-        final Activity context = this;
-        final EditText passwordBox = new EditText(this), ivBox = new EditText(this);
+        sourceFile = new File(path);
 
-        class IvListener implements DialogInterface.OnClickListener
+        LoginActivity.requestLoginData(this, LOGIN_REQUEST_CODE);
+    }
+
+    @Override
+    protected void onActivityResult (int requestCode, int resultCode, Intent data)
+    {
+        if(requestCode == LOGIN_REQUEST_CODE)
         {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i)
+            if(resultCode == RESULT_OK)
             {
-                keyBytes = PasswordProcessor.GetKey(passwordBox.getText().toString());
-                ivBytes = PasswordProcessor.GetKey(ivBox.getText().toString());
-                SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+                keyBytes = data.getByteArrayExtra(LoginActivity.DATA_PASSWORD);
+                ivBytes = data.getByteArrayExtra(LoginActivity.DATA_IV);
+                SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
                 String storagePath = sharedPref.getString(getString(R.string.pref_storage_path_key), getString(R.string.pref_default_path));
                 File extStorage = new File(Environment.getExternalStorageDirectory(), storagePath);
-                File destination = new File(extStorage, source.getName());
-                try
-                {
-                    if(destination.createNewFile());
-                        addFileToStorage(source, destination);
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                    finish();
-                }
+                File destination = new File(extStorage, sourceFile.getName());
+
+                addFileToStorage(sourceFile, destination);
             }
-        }
-
-        class PasswordListener implements DialogInterface.OnClickListener
-        {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i)
-            {
-                AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                builder.setPositiveButton(R.string.file_add_dialog_ok, new IvListener());
-                builder.setView(ivBox);
-                builder.setCancelable(false);
-                builder.setMessage(R.string.file_add_dialog_iv);
-                builder.setTitle(R.string.file_add_dialog_title);
-                AlertDialog dialog = builder.create();
-                dialog.show();
-            }
-        }
-
-        if(checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-        {
-            Toast.makeText(this, R.string.file_add_dialog_permission_error, Toast.LENGTH_SHORT).show();
-        }
-        else
-        {
-            AlertDialog.Builder builder = new AlertDialog.Builder(context);
-            builder.setPositiveButton(R.string.file_add_dialog_ok, new PasswordListener());
-
-            builder.setView(passwordBox);
-
-            builder.setCancelable(false);
-            builder.setMessage(R.string.file_add_dialog_password);
-            builder.setTitle(R.string.file_add_dialog_title);
-            AlertDialog dialog = builder.create();
-            dialog.show();
         }
     }
 
-    private void addFileToStorage(File sourceFile, File destinationFile)
+    private void addFileToStorage(File srcFile, File destinationFile)
     {
         TransmitterParams params = new TransmitterParams();
 
@@ -337,9 +295,9 @@ public class FileProcessingActivity extends Activity
         try
         {
             params.writer = new FileOutputStream(destinationFile);
-            params.reader = new FileInputStream(sourceFile);
+            params.reader = new FileInputStream(srcFile);
             params.mode = 1;
-            lastEncryptedFile = sourceFile;
+            lastEncryptedFile = srcFile;
             new TransmitTask().execute(params);
         }
         catch (FileNotFoundException e)
