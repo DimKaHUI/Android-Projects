@@ -149,6 +149,26 @@ public class FileProcessingActivity extends Activity
         return result;
     }
 
+    static String GetEncryptedName(File file, byte[] keyBytes, byte[] ivBytes)
+    {
+        String fileName = file.getName();
+        if(fileName.startsWith(FILENAME_ENCRYPTED_PREFIX))
+            return file.getName();
+        try
+        {
+            Cryptor cryptor = new Cryptor(keyBytes, ivBytes, Cryptor.Mode.ENCRYPTING);
+            byte[] plain = file.getName().getBytes();
+            byte[] encrypted = cryptor.doFinal(plain);
+            String encoded = android.util.Base64.encodeToString(encrypted, android.util.Base64.NO_WRAP | android.util.Base64.URL_SAFE);
+            file = new File(file.getParentFile(), FILENAME_ENCRYPTED_PREFIX + encoded);
+        }
+        catch (Cryptor.InvalidKeySize invalidKeySize)
+        {
+            invalidKeySize.printStackTrace();
+        }
+        return file.getName();
+    }
+
     static File EncryptFileName(File file, byte[] keyBytes, byte[] ivBytes)
     {
         String fileName = file.getName();
@@ -263,7 +283,7 @@ public class FileProcessingActivity extends Activity
         String path = uri.getPath();
         sourceFile = new File(path);
 
-        LoginActivity.requestLoginData(this, LOGIN_REQUEST_CODE);
+        LoginActivity.getPreferredLoginActivity(this).requestLoginData(this, LOGIN_REQUEST_CODE);
     }
 
     @Override
@@ -273,8 +293,8 @@ public class FileProcessingActivity extends Activity
         {
             if(resultCode == RESULT_OK)
             {
-                keyBytes = data.getByteArrayExtra(LoginActivity.DATA_PASSWORD);
-                ivBytes = data.getByteArrayExtra(LoginActivity.DATA_IV);
+                keyBytes = data.getByteArrayExtra(TextLoginActivity.DATA_PASSWORD);
+                ivBytes = data.getByteArrayExtra(TextLoginActivity.DATA_IV);
                 SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
                 String storagePath = sharedPref.getString(getString(R.string.pref_storage_path_key), getString(R.string.pref_default_path));
                 File extStorage = new File(Environment.getExternalStorageDirectory(), storagePath);

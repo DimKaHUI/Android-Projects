@@ -3,41 +3,27 @@ package com.dmitrymon.cipherbox;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
-import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
 import android.app.Activity;
 import android.os.Environment;
 import android.preference.PreferenceManager;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.view.ActionMode;
-import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Objects;
-
-import javax.crypto.Cipher;
-
-import static com.dmitrymon.cipherbox.FileProcessingActivity.DATA_NAME_STRING;
 
 public class MenuActivity extends Activity
 {
@@ -45,21 +31,23 @@ public class MenuActivity extends Activity
     LinearLayout linearLayout;
     Button prefsButton;
     Button addButton;
+    Button loginButton;
     TextView textView;
     File[] fileInfos;
     String[] decryptedFileNames;
     File extracted;
 
+
     private static final int OPEN_DOCUMENT_REQUEST_CODE = 125;
     private static final int GET_PERMISSIONS_REQUEST_CODE = 126;
-    private static final int PROCESS_FILE_REQUEST_CODE = 127;
     private static final int DECRYPT_FILE_REQUEST_CODE = 128;
     private static final int OPEN_DIRECTORY_REQUEST_CODE = 129;
     private static final int PREFS_REQUEST_CODE = 130;
+    private static final int LOGIN_REQUEST_CODE = 131;
 
     // Data for encryption/decryption
-    private byte[] keyBytes;
-    private byte[] ivBytes;
+    private byte[] keyBytes = null;
+    private byte[] ivBytes = null;
     String storagePath;
     boolean shouldKill = false;
     boolean cipherFileNames = true;
@@ -70,25 +58,30 @@ public class MenuActivity extends Activity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_menu);
 
-        boolean granted = processPermission();
-
         setupLayout();
         getPreferences();
-        processIntent(getIntent());
+        processIntent(getIntent()); // Only reads key and IV from intent
 
-        if(granted)
+        boolean permissionsGranted = processPermission();
+        boolean passwordNotNull = keyBytes != null;
+        if(permissionsGranted && passwordNotNull)
         {
             processFileNames(new File(storagePath));
             readStorage();
         }
+
+    }
+
+    private void requestLoginData()
+    {
+        LoginActivity loginActivity = LoginActivity.getPreferredLoginActivity(this);
+        loginActivity.requestLoginData(this, LOGIN_REQUEST_CODE);
     }
 
     @Override
     public void onBackPressed()
     {
-        Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
-        shouldKill = true;
-        startActivity(intent);
+        finish();
     }
 
     @Override
@@ -96,7 +89,9 @@ public class MenuActivity extends Activity
     {
         super.onResume();
         getPreferences();
-        readStorage();
+
+        if(keyBytes != null)
+            readStorage();
     }
 
     @Override
@@ -135,11 +130,15 @@ public class MenuActivity extends Activity
 
     private void setupLayout()
     {
+        ButtonListener listener = new ButtonListener();
         prefsButton = findViewById(R.id.prefsButton);
-        prefsButton.setOnClickListener(new ButtonListener());
+        prefsButton.setOnClickListener(listener);
         linearLayout = findViewById(R.id.listOfFiles);
         addButton = findViewById(R.id.addToStorageButton);
-        addButton.setOnClickListener(new ButtonListener());
+        addButton.setOnClickListener(listener);
+        addButton.setVisibility(View.INVISIBLE);
+        loginButton = findViewById(R.id.loginButton);
+        loginButton.setOnClickListener(listener);
     }
 
     private void processIntent(Intent intent)
@@ -151,7 +150,6 @@ public class MenuActivity extends Activity
                 ivBytes = intent.getByteArrayExtra(LoginActivity.DATA_IV);
                 break;
             default:
-                // TODO No such action. Aborting
         }
     }
 
@@ -235,26 +233,6 @@ public class MenuActivity extends Activity
         Toast.makeText(this,"Impossible to create directory", Toast.LENGTH_LONG).show();
     }
 
-    View generateView(File fileInfo)
-    {
-        final FileButton button = new FileButton(this, fileInfo);
-        String name;
-        name = FileProcessingActivity.GetDecryptedName(fileInfo, keyBytes, ivBytes);
-
-        button.setText(name);
-        button.setOnClickListener(new ButtonListener());
-        button.setOnLongClickListener(new View.OnLongClickListener()
-        {
-            @Override
-            public boolean onLongClick(View v)
-            {
-                startActionMode(new FileItemCallback(button));
-                return true;
-            }
-        });
-        return button;
-    }
-
     View generateView(File fileInfo, String label)
     {
         final FileButton button = new FileButton(this, fileInfo);
@@ -319,6 +297,10 @@ public class MenuActivity extends Activity
             {
                 invokeFileChooserActivity();
             }
+            else if(v == loginButton)
+            {
+                requestLoginData();
+            }
             else
             {
                 //int index = linearLayout.indexOfChild(v);
@@ -343,11 +325,6 @@ public class MenuActivity extends Activity
         }
     }
 
-    void showFileMenu(int index)
-    {
-        File fileInfo = fileInfos[index];
-        invokeFileProcessor(fileInfo);
-    }
 
     void showFileMenu(File file)
     {
@@ -377,7 +354,6 @@ public class MenuActivity extends Activity
 
     void invokeFileDecryptor(File file)
     {
-        // TODO Decrypting
         extracted = file;
         FileChooserActivity.invokeDirectoryChooser(this, OPEN_DIRECTORY_REQUEST_CODE);
     }
@@ -385,6 +361,21 @@ public class MenuActivity extends Activity
     @Override
     protected void onActivityResult (int requestCode, int resultCode, Intent data)
     {
+        if(requestCode == LOGIN_REQUEST_CODE && resultCode == RESULT_OK)
+        {
+            keyBytes = data.getByteArrayExtra(LoginActivity.DATA_PASSWORD);
+            ivBytes = data.getByteArrayExtra(LoginActivity.DATA_IV);
+            loginButton.setVisibility(View.INVISIBLE);
+            loginButton.setEnabled(false);
+            addButton.setVisibility(View.VISIBLE);
+            processFileNames(new File(storagePath));
+            readStorage();
+        }
+        /*else if(resultCode == RESULT_CANCELED)
+        {
+            finish();
+        }*/
+
         if(requestCode == OPEN_DOCUMENT_REQUEST_CODE)
         {
             Log.v(MenuActivity.class.getName(), "Document received!");
@@ -432,7 +423,6 @@ public class MenuActivity extends Activity
 
     private void invokeFileAdderActivity(String path, String destinationName)
     {
-        // TODO File name chooser
         File destination = new File(storagePath + "/" + destinationName);
         File sourceFile = new File(path);
 
@@ -445,7 +435,7 @@ public class MenuActivity extends Activity
                 if(created)
                     FileProcessingActivity.inputFile(this, sourceFile, destination, keyBytes, ivBytes, cipherFileNames);
                 else
-                    showMessageFileExists();
+                    showMessageFileExists(destination);
             }
             catch (IOException e)
             {
@@ -455,10 +445,12 @@ public class MenuActivity extends Activity
 
     }
 
-    void showMessageFileExists()
+    void showMessageFileExists(File file)
     {
         // TODO Message file exists
-
+        String template = getString(R.string.message_file_exists);
+        String msg = String.format(template, file.getName());
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
 
     private void permissionNotGranted()

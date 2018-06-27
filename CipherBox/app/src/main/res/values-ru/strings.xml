@@ -3,7 +3,7 @@
     <string name="app_name">CipherBox</string>
     <string name="login_button_text">Войти в хранилище</string>
     <string name="info_login_text">Пароль:</string>
-    <string name="title_activity_menu">Выберите элемент:</string>
+    <string name="title_activity_menu">CipherBox</string>
     <string name="title_activity_settings">Настройки</string>
     <string name="pref_header_general">Общие</string>
     <string name="pref_title_social_recommendations">Включить рекомендации</string>
@@ -34,4 +34,8 @@
     некоторого количества времени для выполнения. Рекомендуется не пользоваться небезопасным
     удалением. Этот вариант приемлим только при удалении весьма больших файлов</string>
     <string name="deletion_dialog_title">Удаление файла</string>
+
+    <string name="pref_login_method_title">Метод входа</string>
+    <string name="pref_login_method_summary">Рекомендуемый метод - текстовый пароль. Графический ключ небезопасен из-за низкого количества комбинаций. ВНИМАНИЕ: методы входа друг с другом не совместимы и не могут выдать одинаковый ключ. Всегда используйте какой-то один метод</string>
+    <string name="pref_login_method_key">login_method_key</string>
 </resources>

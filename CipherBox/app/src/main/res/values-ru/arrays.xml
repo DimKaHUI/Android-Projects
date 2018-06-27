@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="loginMethods">
+        <item>Пароль</item>
+        <item>Графический ключ (будет :3)</item>
+    </string-array>
+
+    <string-array name="loginMethodsValues">
+        <item>Password</item>
+        <item>Graphic</item>
+    </string-array>
+</resources>

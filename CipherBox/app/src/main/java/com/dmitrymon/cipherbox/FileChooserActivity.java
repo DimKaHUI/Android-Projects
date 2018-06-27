@@ -13,8 +13,6 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Comparator;
 
 public class FileChooserActivity extends Activity
 {
@@ -50,11 +48,15 @@ public class FileChooserActivity extends Activity
 
     void processIntent(Intent intent)
     {
-        if(intent.getAction().equals(ACTION_PICK_FILE))
+        String action = intent.getAction();
+        if(action == null)
+            return;
+
+        if(action.equals(ACTION_PICK_FILE))
         {
             type = Type.FILE;
         }
-        if(intent.getAction().equals(ACTION_PICK_DIR))
+        if(action.equals(ACTION_PICK_DIR))
         {
             type = Type.DIRECTORY;
         }
@@ -70,14 +72,6 @@ public class FileChooserActivity extends Activity
             listFiles(Environment.getExternalStorageDirectory());
         }
     }
-
-    public static void invokeFileChooser(Activity invoker, File initialDir, int requestCode)
-{
-    Intent intent = new Intent(invoker, FileChooserActivity.class);
-    intent.setAction(ACTION_PICK_FILE);
-    intent.putExtra(EXTRA_INITIAL_PATH, initialDir.getPath());
-    invoker.startActivityForResult(intent, requestCode);
-}
 
     public static void invokeFileChooser(Activity invoker, int requestCode)
     {
@@ -218,7 +212,8 @@ public class FileChooserActivity extends Activity
         }
         if(file.isDirectory())
         {
-            button.setText(label + File.separator);
+            String text = label + File.pathSeparator;
+            button.setText(text);
             button.setTextColor(Color.BLUE);
         }
         button.setOnClickListener(new FileButtonListener());

@@ -2,7 +2,7 @@
     <string name="app_name">CipherBox</string>
     <string name="login_button_text">Login</string>
     <string name="info_login_text">Password:</string>
-    <string name="title_activity_menu">Choose element:</string>
+    <string name="title_activity_menu">CipherBox</string>
     <string name="title_activity_settings">Settings</string>
 
     <!-- Strings related to Settings -->
@@ -49,4 +49,8 @@
     <string name="file_add_dialog_password">Password:</string>
     <string name="file_add_dialog_iv">IV</string>
     <string name="file_add_dialog_permission_error">Permissions not granted! Launch CipherBox and grant permissions</string>
+    <string name="pref_login_method_title">Login method</string>
+    <string name="pref_login_method_summary">Recommended method is Password. Graphical login is UNSAFE due to low combination number</string>
+    <string name="pref_login_method_key">login_method_key</string>
+    <string name="message_file_exists">File %s  already exists. Rename file and retry</string>
 </resources>

@@ -6,11 +6,21 @@
         android:title="@string/pref_hide_unsafe_deletion_title"
         android:summary="@string/pref_hide_unsafe_deletion_summary"
         />
+
     <SwitchPreference
         android:defaultValue="true"
         android:key="@string/pref_cipher_file_names_key"
         android:summary="@string/cipher_file_names_switch_summary"
         android:title="@string/cipher_file_names_switch_title" />
+
+    <ListPreference
+        android:title="@string/pref_login_method_title"
+        android:summary="@string/pref_login_method_summary"
+        android:defaultValue="Password"
+        android:key="@string/pref_login_method_key"
+        android:entries="@array/loginMethods"
+        android:entryValues="@array/loginMethodsValues"
+        />
 
     <!-- NOTE: EditTextPreference accepts EditText attributes. -->
     <!-- NOTE: EditTextPreference's summary should be set to its value by the activity code. -->

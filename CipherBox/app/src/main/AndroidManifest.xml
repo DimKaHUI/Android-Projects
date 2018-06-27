@@ -12,21 +12,32 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
         <activity
-            android:name=".LoginActivity"
+            android:name=".TextLoginActivity"
             android:noHistory="true">
+        </activity>
+
+        <activity
+            android:name=".GraphicalLoginActivity"
+            android:noHistory="true">
+
+        </activity>
+
+        <activity
+            android:name=".MenuActivity"
+            android:label="@string/title_activity_menu" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".MenuActivity"
-            android:label="@string/title_activity_menu" />
+
         <activity
             android:name=".SettingsActivity"
-            android:label="@string/title_activity_settings" />
+            android:label="@string/title_activity_settings" >
+        </activity>
 
         <activity android:name=".FileProcessingActivity">
             <intent-filter>
