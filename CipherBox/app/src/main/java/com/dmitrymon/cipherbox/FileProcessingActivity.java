@@ -237,36 +237,38 @@ public class FileProcessingActivity extends Activity
 
     private void processIntent(Intent intent)
     {
+        String action = intent.getAction();
+        if(action == null)
+            return;
         keyBytes = intent.getByteArrayExtra(DATA_PASSWORD);
         ivBytes = intent.getByteArrayExtra(DATA_IV);
         String destinationPath = intent.getStringExtra(DATA_DEST_PATH);
         String filePath = intent.getStringExtra(DATA_NAME_STRING);
         cipherNames = intent.getBooleanExtra(DATA_CIPHER_NAMES, cipherNames);
 
-        if(intent.getAction().equals(ACTION_ENCRYPT))
+        switch (action)
         {
-            addFileToStorage(new File(filePath), new File(destinationPath));
-        }
-        else if(intent.getAction().equals(ACTION_DECRYPT))
-        {
-            boolean isPermanent = intent.getBooleanExtra(DATA_IS_PERMANENT, false);
-            if(!isPermanent)
-                extractFileFromStorage(filePath, null);
-            else
-                extractFileFromStorage(filePath, new File(destinationPath));
-        }
-        else if(intent.getAction().equals(Intent.ACTION_VIEW))
-        {
-            Uri content = intent.getData();
-            if(content != null)
-                addFileFromUri(content);
-            else
-                finish();
-        }
-        else if(intent.getAction().equals(ACTION_DELETE_FILE))
-        {
-            File file = new File(filePath);
-            requestFileDeletion(file, R.string.deletion_dialog_on_permanent);
+            case ACTION_ENCRYPT:
+                addFileToStorage(new File(filePath), new File(destinationPath));
+                break;
+            case ACTION_DECRYPT:
+                boolean isPermanent = intent.getBooleanExtra(DATA_IS_PERMANENT, false);
+                if (!isPermanent)
+                    extractFileFromStorage(filePath, null);
+                else
+                    extractFileFromStorage(filePath, new File(destinationPath));
+                break;
+            case Intent.ACTION_VIEW:
+                Uri content = intent.getData();
+                if (content != null)
+                    addFileFromUri(content);
+                else
+                    finish();
+                break;
+            case ACTION_DELETE_FILE:
+                File file = new File(filePath);
+                requestFileDeletion(file, R.string.deletion_dialog_on_permanent);
+                break;
         }
     }
 
@@ -697,7 +699,6 @@ public class FileProcessingActivity extends Activity
 
     private void handleFileNotFound()
     {
-        // TODO Handle file not found exception
         Log.e(FileProcessingActivity.class.getName(), "File not found!");
         setResult(RESULT_CANCELED);
         finish();
