@@ -1,11 +1,14 @@
 package com.dmitrymon.cipherbox;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ClipData;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -235,6 +238,12 @@ public class FileProcessingActivity extends Activity
         context.startActivityForResult(intent, requestCode);
     }
 
+    private boolean checkPermissions()
+    {
+        return checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+    }
+
     private void processIntent(Intent intent)
     {
         String action = intent.getAction();
@@ -245,6 +254,13 @@ public class FileProcessingActivity extends Activity
         String destinationPath = intent.getStringExtra(DATA_DEST_PATH);
         String filePath = intent.getStringExtra(DATA_NAME_STRING);
         cipherNames = intent.getBooleanExtra(DATA_CIPHER_NAMES, cipherNames);
+
+
+        if(!checkPermissions())
+        {
+            showMessageNoPermissions();
+            return;
+        }
 
         switch (action)
         {
@@ -265,11 +281,61 @@ public class FileProcessingActivity extends Activity
                 else
                     finish();
                 break;
+
+            case Intent.ACTION_SEND:
+                onActionSend(intent);
+                break;
+
             case ACTION_DELETE_FILE:
                 File file = new File(filePath);
                 requestFileDeletion(file, R.string.deletion_dialog_on_permanent);
                 break;
         }
+    }
+
+    private void onActionSend(Intent intent)
+    {
+        String message = "";
+        ClipData data = intent.getClipData();
+        message += "Data loaded\n";
+        boolean success = true;
+
+        if(data == null)
+        {
+            success = false;
+            message += "Data is null";
+        }
+        else
+        {
+            ClipData.Item item = data.getItemAt(0);
+            if(item == null)
+            {
+                success = false;
+                message += "item is null";
+            }
+            else
+            {
+                Uri fileUri = item.getUri();
+                if (fileUri != null)
+                {
+                    addFileFromUri(fileUri);
+                    message += "INVOCATION";
+                }
+                else
+                {
+                    success = false;
+                    message += "uri is null";
+                }
+            }
+        }
+
+        if(!success)
+        {
+            showMessageNotFile();
+            ErrorSenderActivity.sendErrorReport(this, new Exception(), message); // TODO Remove error sender
+        }
+
+
     }
 
     @Override
@@ -280,7 +346,6 @@ public class FileProcessingActivity extends Activity
 
     private void addFileFromUri(Uri uri)
     {
-
         Log.v("FileProcessingActivity", uri.toString());
         String path = uri.getPath();
         sourceFile = new File(path);
@@ -585,6 +650,54 @@ public class FileProcessingActivity extends Activity
     {
         Toast t = Toast.makeText(this,"Wrong password!", Toast.LENGTH_SHORT);
         t.show();
+    }
+
+    private void showMessageNotFile()
+    {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        class DialogButtonListener implements DialogInterface.OnClickListener, DialogInterface.OnCancelListener
+        {
+            @Override
+            public void onCancel(DialogInterface dialog)
+            {
+                finish();
+            }
+
+            @Override
+            public void onClick(DialogInterface dialog, int which)
+            {
+                finish();
+            }
+        }
+
+        builder.setTitle("Error");
+        builder.setMessage("Data must be a local file!");
+        builder.setPositiveButton("OK", new DialogButtonListener());
+        builder.create().show();
+    }
+
+    private void showMessageNoPermissions()
+    {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        class DialogButtonListener implements DialogInterface.OnClickListener, DialogInterface.OnCancelListener
+        {
+            @Override
+            public void onCancel(DialogInterface dialog)
+            {
+                finish();
+            }
+
+            @Override
+            public void onClick(DialogInterface dialog, int which)
+            {
+                finish();
+            }
+        }
+
+        builder.setTitle("Error");
+        builder.setMessage("Some permissions were not granted. Start application from icon and grant permissions!");
+        builder.setPositiveButton("OK", new DialogButtonListener());
+        builder.create().show();
     }
 
     private String getFileMime(File file)

@@ -396,7 +396,6 @@ public class MenuActivity extends Activity
             else
             {
                 Log.v(MenuActivity.class.getName(), "Permission granted!");
-                readStorage();
             }
         }
 

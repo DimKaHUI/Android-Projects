@@ -21,9 +21,7 @@
     <string name="decrypt_file_item">Decrypt and save</string>
     <string name="delete_file_item">Delete</string>
     <string name="info_login_iv_text">Initialization Vector:</string>
-    <string name="cipher_file_names_switch_summary">Ciphering file names makes cryptanalysis
-    more difficult. Also it hides information about what you store. This option only
-    affects new files, already stored files will not change</string>
+    <string name="cipher_file_names_switch_summary">Ciphering file names makes cryptanalysis more difficult. Also it hides information about what you store. This option only affects new files, already stored files will not change</string>
     <string name="cipher_file_names_switch_title">Cipher file names</string>
     <string name="pref_path_display_name">Storage path</string>
     <string name="deletion_dialog_yes">Yes (safe)</string>
@@ -37,10 +35,7 @@
     <string name="file_processor_processing">Processing…</string>
     <string name="file_processor_deleting">Deleting…</string>
     <string name="pref_hide_unsafe_deletion_title">Hide unsafe deletion option</string>
-    <string name="pref_hide_unsafe_deletion_summary">Safe deletion rewrites file with
-    nonsensical data. This process needs some time to be finished, but it makes file
-    restoration impossible. For safety reason it is strongly recommended not to use unsafe
-    deletion. Use this only if your files are really large.</string>
+    <string name="pref_hide_unsafe_deletion_summary">Safe deletion rewrites file with nonsensical data. This process needs some time to be finished, but it makes file restoration impossible. For safety reason it is strongly recommended not to use unsafe deletion. Use this only if your files are really large.</string>
     <string name="pref_hide_unsafe_deletion_option_key" translatable="false">hide_unsafe_deletion_option</string>
     <string name="pref_cipher_file_names_key" translatable="false">cipher_file_names_key</string>
     <string name="pref_storage_path_key" translatable="false">storage_path_key</string>
