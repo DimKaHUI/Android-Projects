@@ -35,4 +35,9 @@
     <string name="pref_login_method_title">Метод входа</string>
     <string name="pref_login_method_summary">Рекомендуемый метод - текстовый пароль. Графический ключ небезопасен из-за низкого количества комбинаций. ВНИМАНИЕ: методы входа друг с другом не совместимы и не могут выдать одинаковый ключ. Всегда используйте какой-то один метод</string>
     <string name="pref_login_method_key">login_method_key</string>
+    <string name="message_wrong_key">Неверный ключ</string>
+    <string name="message_not_a_file">Данные должны быть локальным файлом</string>
+    <string name="message_permissions_not_granted">Приложение не получило некоторые разрешения. Запустите приложение через иконку и дайте разрешения</string>
+    <string name="message_file_not_found">Файл не найден!</string>
+    <string name="message_no_activity">На вашем устройстве нет приложений, которые могут просмотреть этот файл</string>
 </resources>

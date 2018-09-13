@@ -1,13 +1,17 @@
 package com.dmitrymon.cipherbox;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ClipData;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -31,15 +35,15 @@ import java.io.OutputStream;
 public class FileProcessingActivity extends Activity
 {
     // Data for decrypting
-    public static final String ACTION_DECRYPT = "com.dmitrymon.cipherbox.ACTION_DECRYPT";
-    public static final String ACTION_ENCRYPT = "com.dmitrymon.cipherbox.ACTION_ENCRYPT";
-    public static final String ACTION_DELETE_FILE = "com.dmitrymon.ACTION_DELETE_FILE";
-    public static final String DATA_PASSWORD = "com.dmitrymon.cipherbox.DATA_PROCESSING_PASSWORD";
-    public static final String DATA_IV = "com.dmitrymon.cipherbox.DATA_IV";
-    public static final String DATA_NAME_STRING = "com.dmitrymon.cipherbox.DATA_NAME_STRING";
-    public static final String DATA_DEST_PATH = "com.dmitrymon.cipherbox.DATA_STORAGE_PATH";
-    public static final String DATA_IS_PERMANENT = "com.dmitrymon.cipherbox.DATA_IS_PERMANENT";
-    public static final String DATA_CIPHER_NAMES = "com.dmitrymon.cipherbox.DATA_CIPHER_NAMES";
+    public static final String ACTION_DECRYPT = BuildConfig.APPLICATION_ID + ".ACTION_DECRYPT";
+    public static final String ACTION_ENCRYPT = BuildConfig.APPLICATION_ID + ".ACTION_ENCRYPT";
+    public static final String ACTION_DELETE_FILE = BuildConfig.APPLICATION_ID + ".ACTION_DELETE_FILE";
+    public static final String DATA_PASSWORD = BuildConfig.APPLICATION_ID + ".DATA_PROCESSING_PASSWORD";
+    public static final String DATA_IV = BuildConfig.APPLICATION_ID + ".DATA_IV";
+    public static final String DATA_NAME_STRING = BuildConfig.APPLICATION_ID + ".DATA_NAME_STRING";
+    public static final String DATA_DEST_PATH = BuildConfig.APPLICATION_ID + ".DATA_STORAGE_PATH";
+    public static final String DATA_IS_PERMANENT = BuildConfig.APPLICATION_ID + ".DATA_IS_PERMANENT";
+    public static final String DATA_CIPHER_NAMES = BuildConfig.APPLICATION_ID + ".DATA_CIPHER_NAMES";
 
     public static final String FILENAME_ENCRYPTED_PREFIX = ".cb_";
 
@@ -63,17 +67,12 @@ public class FileProcessingActivity extends Activity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_file_processing);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
         bar = findViewById(R.id.progressBar);
-        getSystemData();
+
         getPreferences();
         processIntent(getIntent());
-    }
-
-    private void getSystemData()
-    {
-        //FileSystem fs = FileSystems.;
-
     }
 
     private void getPreferences()
@@ -145,10 +144,10 @@ public class FileProcessingActivity extends Activity
         {
             invalidKeySize.printStackTrace();
         }
-        catch (IllegalArgumentException ex)
+        /*catch (IllegalArgumentException ex)
         {
             ex.printStackTrace();
-        }
+        }*/
         return result;
     }
 
@@ -203,6 +202,7 @@ public class FileProcessingActivity extends Activity
         intent.putExtra(DATA_IV, iv);
         intent.putExtra(DATA_NAME_STRING, sourceFile.getPath());
         intent.putExtra(DATA_CIPHER_NAMES, cipherNames);
+
         context.startActivity(intent);
     }
 
@@ -332,10 +332,8 @@ public class FileProcessingActivity extends Activity
         if(!success)
         {
             showMessageNotFile();
-            ErrorSenderActivity.sendErrorReport(this, new Exception(), message); // TODO Remove error sender
+            //ErrorSenderActivity.sendErrorReport(this, new Exception(), message); // TODO Remove error sender
         }
-
-
     }
 
     @Override
@@ -389,10 +387,12 @@ public class FileProcessingActivity extends Activity
         }
         catch (FileNotFoundException e)
         {
-            e.printStackTrace();
+            showMessageFileNotFound();
+            ErrorSenderActivity.sendErrorReport(this, e, "");
         }
     }
 
+    @SuppressLint("StaticFieldLeak")
     class SafeDeleteTask extends AsyncTask<File, Integer, Void>
     {
 
@@ -457,12 +457,15 @@ public class FileProcessingActivity extends Activity
         }
     }
 
-
+    @SuppressLint("StaticFieldLeak")
     class TransmitTask extends AsyncTask<TransmitterParams, Integer, Void>
     {
         int mode;
         boolean success = true;
         boolean shouldOpen;
+
+        private FileInputStream reader;
+        private OutputStream writer;
 
         @Override
         protected Void doInBackground(TransmitterParams... params)
@@ -473,9 +476,9 @@ public class FileProcessingActivity extends Activity
                 shouldOpen = param.shouldOpen;
                 mode = param.mode;
 
-                FileInputStream reader = param.reader;
+                reader = param.reader;
 
-                OutputStream writer = param.writer;
+                writer = param.writer;
 
 
                 Cryptor cryptor;
@@ -504,7 +507,11 @@ public class FileProcessingActivity extends Activity
                 for(; offset < threshold; offset += blockSize)
                 {
                     byte[] block = new byte[(int)blockSize];
-                    reader.read(block, 0, (int)blockSize);
+                    int bytesWereRead = reader.read(block, 0, (int)blockSize);
+                    if(bytesWereRead != blockSize)
+                    {
+                        throw new IOException("Possible data corruption.");
+                    }
 
                     byte[] encryptedBlock = cryptor.update(block);
 
@@ -523,7 +530,13 @@ public class FileProcessingActivity extends Activity
                 long delta = fileLength - threshold;
 
                 byte[] finalBlock = new byte[(int)delta];
-                reader.read(finalBlock, 0, finalBlock.length);
+                int bytesWereRead = reader.read(finalBlock, 0, finalBlock.length);
+
+                if(bytesWereRead != finalBlock.length)
+                {
+                    throw new IOException("Possible data corruption.");
+                }
+
                 byte[] encryptedFinalBlock = cryptor.doFinal(finalBlock);
                 if(encryptedFinalBlock == null)
                     success = false;
@@ -534,18 +547,25 @@ public class FileProcessingActivity extends Activity
                 reader.close();
                 writer.close();
             }
-            catch (FileNotFoundException ex)
-            {
-                Log.e(FileProcessingActivity.class.getName(), ex.getMessage());
-                handleFileNotFound();
-            }
             catch (IOException e)
             {
-                e.printStackTrace();
+                showMessage(e);
             }
             catch (Cryptor.InvalidKeySize ex)
             {
-                handleInvalidKeySize();
+                showMessageInvalidKeySize();
+            }
+            finally
+            {
+                try
+                {
+                    reader.close();
+                    writer.close();
+                }
+                catch (IOException e)
+                {
+                    showMessage(e);
+                }
             }
 
             return null;
@@ -564,7 +584,7 @@ public class FileProcessingActivity extends Activity
             if(!success)
             {
                 showMessageWrongKey();
-                deleteFileSafely(extracted);
+
             }
             if(mode == 0)
             {
@@ -577,11 +597,8 @@ public class FileProcessingActivity extends Activity
             }
             if(mode == 1 && success)
             {
-                //deleteFile(lastEncryptedFile);
                 requestFileDeletion(lastEncryptedFile, R.string.deletion_dialog_on_adding);
             }
-
-            //finish();
         }
     }
 
@@ -646,60 +663,6 @@ public class FileProcessingActivity extends Activity
         dialog.show();
     }
 
-    private void showMessageWrongKey()
-    {
-        Toast t = Toast.makeText(this,"Wrong password!", Toast.LENGTH_SHORT);
-        t.show();
-    }
-
-    private void showMessageNotFile()
-    {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        class DialogButtonListener implements DialogInterface.OnClickListener, DialogInterface.OnCancelListener
-        {
-            @Override
-            public void onCancel(DialogInterface dialog)
-            {
-                finish();
-            }
-
-            @Override
-            public void onClick(DialogInterface dialog, int which)
-            {
-                finish();
-            }
-        }
-
-        builder.setTitle("Error");
-        builder.setMessage("Data must be a local file!");
-        builder.setPositiveButton("OK", new DialogButtonListener());
-        builder.create().show();
-    }
-
-    private void showMessageNoPermissions()
-    {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        class DialogButtonListener implements DialogInterface.OnClickListener, DialogInterface.OnCancelListener
-        {
-            @Override
-            public void onCancel(DialogInterface dialog)
-            {
-                finish();
-            }
-
-            @Override
-            public void onClick(DialogInterface dialog, int which)
-            {
-                finish();
-            }
-        }
-
-        builder.setTitle("Error");
-        builder.setMessage("Some permissions were not granted. Start application from icon and grant permissions!");
-        builder.setPositiveButton("OK", new DialogButtonListener());
-        builder.create().show();
-    }
-
     private String getFileMime(File file)
     {
         String type = null;
@@ -748,7 +711,9 @@ public class FileProcessingActivity extends Activity
             if(!destFile.exists())
             {
                 Log.e("TEST", destFile.getPath());
-                destFile.createNewFile();
+                boolean isFileCreated = destFile.createNewFile();
+                if(!isFileCreated)
+                    throw new IOException("Impossible to create file");
             }
             param.writer = new FileOutputStream(destFile);
             param.reader = new FileInputStream(encryptedFile);
@@ -757,11 +722,11 @@ public class FileProcessingActivity extends Activity
         }
         catch (FileNotFoundException e)
         {
-            e.printStackTrace();
+            showMessageFileNotFound();
         }
         catch (IOException ex)
         {
-            ex.printStackTrace();
+            showMessage(ex);
         }
     }
 
@@ -795,11 +760,8 @@ public class FileProcessingActivity extends Activity
 
         try
         {
-            //if (intent.resolveActivity(getPackageManager()) != null)
             startActivity(intent);
             viewerStarted = true;
-            //else
-                //showMessageNoActivity();
         }
         catch (Exception ex)
         {
@@ -810,27 +772,6 @@ public class FileProcessingActivity extends Activity
         }
     }
 
-    private void handleFileNotFound()
-    {
-        Log.e(FileProcessingActivity.class.getName(), "File not found!");
-        setResult(RESULT_CANCELED);
-        finish();
-    }
-
-    private void showMessageNoActivity()
-    {
-        Toast toast = Toast.makeText(this, "No activity to open this file!", Toast.LENGTH_LONG);
-        toast.show();
-    }
-
-    private void handleInvalidKeySize()
-    {
-        Log.e(FileProcessingActivity.class.getName(), "Invalid key size!");
-        setResult(RESULT_CANCELED);
-        finish();
-    }
-
-
     private class TransmitterParams
     {
         FileInputStream reader;
@@ -838,4 +779,74 @@ public class FileProcessingActivity extends Activity
         int mode;
         boolean shouldOpen = true;
     }
+
+
+
+    // Error messages
+
+    class onErrorFinishListener implements ErrorDialogBuilder.onFinishListener
+    {
+        @Override
+        public void onFinish()
+        {
+            finish();
+        }
+    }
+
+    private void showMessage(String message)
+    {
+        ErrorDialogBuilder builder = new ErrorDialogBuilder(this, message, new onErrorFinishListener());
+        builder.showDialog();
+    }
+
+    private void showMessage(Exception exception)
+    {
+        ErrorDialogBuilder builder = new ErrorDialogBuilder(this, exception.getMessage(), new onErrorFinishListener());
+        builder.showDialog();
+    }
+
+    private void showMessageWrongKey()
+    {
+        class onWrongKeyListener implements ErrorDialogBuilder.onFinishListener
+        {
+            @Override
+            public void onFinish()
+            {
+                deleteFileSafely(extracted);
+            }
+        }
+        ErrorDialogBuilder builder = new ErrorDialogBuilder(this, getString(R.string.message_wrong_key), new onWrongKeyListener());
+        builder.showDialog();
+    }
+
+    private void showMessageNotFile()
+    {
+        ErrorDialogBuilder builder = new ErrorDialogBuilder(this, getString(R.string.message_not_a_file), new onErrorFinishListener());
+        builder.showDialog();
+    }
+
+    private void showMessageNoPermissions()
+    {
+        ErrorDialogBuilder builder = new ErrorDialogBuilder(this, getString(R.string.message_permissions_not_granted), new onErrorFinishListener());
+        builder.showDialog();
+    }
+
+    private void showMessageFileNotFound()
+    {
+        ErrorDialogBuilder builder = new ErrorDialogBuilder(this, getString(R.string.message_file_not_found), new onErrorFinishListener());
+        builder.showDialog();
+    }
+
+    private void showMessageNoActivity()
+    {
+        ErrorDialogBuilder builder = new ErrorDialogBuilder(this, getString(R.string.message_no_activity), new onErrorFinishListener());
+        builder.showDialog();
+    }
+
+    private void showMessageInvalidKeySize()
+    {
+        ErrorDialogBuilder builder = new ErrorDialogBuilder(this, "Invalid key size", new onErrorFinishListener());
+        builder.showDialog();
+    }
+
 }

@@ -9,13 +9,13 @@ import android.util.Log;
 
 public abstract class LoginActivity extends Activity
 {
-    public static final String ACTION_LOGIN = "com.dmitrymon.cipherbox.ACTION_LOGIN";
+    public static final String ACTION_LOGIN = BuildConfig.APPLICATION_ID + ".ACTION_LOGIN";
 
     // Data for logging in
-    public static final String DATA_IV = "com.dmitrymon.cipherbox.DATA_IV";
-    public static final String DATA_PASSWORD = "com.dmitrymon.cipherbox.DATA_PASSWORD";
+    public static final String DATA_IV = BuildConfig.APPLICATION_ID + ".DATA_IV";
+    public static final String DATA_PASSWORD = BuildConfig.APPLICATION_ID + ".DATA_PASSWORD";
 
-    public static final String ACTION_GET_LOGIN_DATA = "com.dmitrymon.cipherbox.ACTION_GET_LOGIN_DATA";
+    public static final String ACTION_GET_LOGIN_DATA = BuildConfig.APPLICATION_ID + ".ACTION_GET_LOGIN_DATA";
 
     @NonNull
     public static LoginActivity getPreferredLoginActivity(Activity invoker)

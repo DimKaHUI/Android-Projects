@@ -16,10 +16,10 @@ import java.io.File;
 
 public class FileChooserActivity extends Activity
 {
-    public static final String ACTION_PICK_FILE = "com.dmitrymon.ACTION_PICK_FILE";
-    public static final String ACTION_PICK_DIR = "com.dmitrymon.ACTION_PICK_DIR";
-    public static final String EXTRA_INITIAL_PATH = "com.dmitrymon.EXTRA_INITIAL_PATH";
-    public static final String EXTRA_RESULT_PATH = "com.dmitrymon.EXTRA_RESULT_PATH";
+    public static final String ACTION_PICK_FILE = BuildConfig.APPLICATION_ID + ".ACTION_PICK_FILE";
+    public static final String ACTION_PICK_DIR = BuildConfig.APPLICATION_ID + ".ACTION_PICK_DIR";
+    public static final String EXTRA_INITIAL_PATH = BuildConfig.APPLICATION_ID + ".EXTRA_INITIAL_PATH";
+    public static final String EXTRA_RESULT_PATH = BuildConfig.APPLICATION_ID + ".EXTRA_RESULT_PATH";
 
     LinearLayout listContainer;
 

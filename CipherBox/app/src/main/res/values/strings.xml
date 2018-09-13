@@ -48,4 +48,11 @@
     <string name="pref_login_method_summary">Recommended method is Password. Graphical login is UNSAFE due to low combination number</string>
     <string name="pref_login_method_key">login_method_key</string>
     <string name="message_file_exists">File %s  already exists. Rename file and retry</string>
+    <string name="message_error_title">Error</string>
+    <string name="message_wrong_key">Wrong key!</string>
+    <string name="message_not_a_file">Data must be a local file!</string>
+    <string name="message_permissions_not_granted">Some permissions were not granted. Start application from icon and grant permissions!</string>
+    <string name="message_file_not_found">File not found!</string>
+    <string name="message_no_activity">No activity to open this file</string>
+
 </resources>

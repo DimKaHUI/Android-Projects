@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.app.Activity;
@@ -18,8 +19,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,14 +27,13 @@ import java.util.Objects;
 public class MenuActivity extends Activity
 {
 
-    LinearLayout linearLayout;
-    Button prefsButton;
-    Button addButton;
-    Button loginButton;
-    TextView textView;
-    File[] fileInfos;
-    String[] decryptedFileNames;
-    File extracted;
+    private LinearLayout linearLayout;
+    private Button prefsButton;
+    private Button addButton;
+    private Button loginButton;
+    private File[] fileList;
+    private String[] decryptedFileNames;
+    private File extracted;
 
 
     private static final int OPEN_DOCUMENT_REQUEST_CODE = 125;
@@ -48,9 +46,9 @@ public class MenuActivity extends Activity
     // Data for encryption/decryption
     private byte[] keyBytes = null;
     private byte[] ivBytes = null;
-    String storagePath;
-    boolean shouldKill = false;
-    boolean cipherFileNames = true;
+    private String storagePath;
+    private boolean cipherFileNames;
+    private boolean activityInitialized = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -58,6 +56,17 @@ public class MenuActivity extends Activity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_menu);
 
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+
+        if(!activityInitialized)
+        {
+            initializeActivity();
+            activityInitialized = true;
+        }
+    }
+
+    private void initializeActivity()
+    {
         setupLayout();
         getPreferences();
         processIntent(getIntent()); // Only reads key and IV from intent
@@ -69,7 +78,6 @@ public class MenuActivity extends Activity
             processFileNames(new File(storagePath));
             readStorage();
         }
-
     }
 
     private void requestLoginData()
@@ -92,17 +100,6 @@ public class MenuActivity extends Activity
 
         if(keyBytes != null)
             readStorage();
-    }
-
-    @Override
-    protected void onPause()
-    {
-        super.onPause();
-        if(shouldKill)
-        {
-            Log.v("MenuActivity","Terminating current activity");
-            finish();
-        }
     }
 
     private boolean processPermission()
@@ -161,7 +158,7 @@ public class MenuActivity extends Activity
         String storageFolder = sharedPref.getString(storagePathKey, defaultPath);
         storagePath = Environment.getExternalStorageDirectory() + "/" + storageFolder;
         String keyCipherFilenames = getString(R.string.pref_cipher_file_names_key);
-        cipherFileNames = sharedPref.getBoolean(keyCipherFilenames, cipherFileNames);
+        cipherFileNames = sharedPref.getBoolean(keyCipherFilenames, true);
     }
 
     private File[] getFilesFromStorage(File directory) throws Exception
@@ -182,27 +179,22 @@ public class MenuActivity extends Activity
     {
         try
         {
-            fileInfos = getFilesFromStorage(new File(storagePath));
+            fileList = getFilesFromStorage(new File(storagePath));
         }
         catch (Exception ex)
         {
             showMessageImpossibleToCreateFolder();
-            finish();
             return;
         }
 
         linearLayout.removeAllViews();
 
-        if(fileInfos == null || fileInfos.length == 0)
-        {
-            ShowMessageStorageIsEmpty();
-        }
-        else
+        if (fileList != null && fileList.length != 0)
         {
             sortFilesByName();
-            for (int i = 0; i < fileInfos.length; i++)
+            for (int i = 0; i < fileList.length; i++)
             {
-                View element = generateView(fileInfos[i], decryptedFileNames[i]);
+                View element = generateView(fileList[i], decryptedFileNames[i]);
                 linearLayout.addView(element);
             }
         }
@@ -227,12 +219,6 @@ public class MenuActivity extends Activity
         }
     }
 
-
-    void showMessageImpossibleToCreateFolder()
-    {
-        Toast.makeText(this,"Impossible to create directory", Toast.LENGTH_LONG).show();
-    }
-
     View generateView(File fileInfo, String label)
     {
         final FileButton button = new FileButton(this, fileInfo);
@@ -250,24 +236,29 @@ public class MenuActivity extends Activity
                 return true;
             }
         });
+
+        int width = linearLayout.getWidth();
+        if(button.getWidth() > width)
+            button.setWidth(width);
+
         return button;
     }
 
     void sortFilesByName()
     {
         // Using Shell sort
-        String[] decryptedNames = new String[fileInfos.length];
+        String[] decryptedNames = new String[fileList.length];
         for(int i = 0; i < decryptedNames.length; i++)
-            decryptedNames[i] = FileProcessingActivity.GetDecryptedName(fileInfos[i], keyBytes, ivBytes);
+            decryptedNames[i] = FileProcessingActivity.GetDecryptedName(fileList[i], keyBytes, ivBytes);
 
         class swapCallback implements ShellSort.SwapCallback
         {
             @Override
             public void onSwap(int a, int b)
             {
-                File tmp = fileInfos[b];
-                fileInfos[b] = fileInfos[a];
-                fileInfos[a] = tmp;
+                File tmp = fileList[b];
+                fileList[b] = fileList[a];
+                fileList[a] = tmp;
             }
         }
         ShellSort.Comparator<String> comparator = new ShellSort.ComparatorCollection.StringComparator(true);
@@ -276,12 +267,6 @@ public class MenuActivity extends Activity
         sorter.sort(decryptedNames);
 
         decryptedFileNames = decryptedNames;
-    }
-
-    void ShowMessageStorageIsEmpty()
-    {
-        /*Toast toast = Toast.makeText(this, "Storage is empty!", Toast.LENGTH_SHORT);
-        toast.show();*/
     }
 
     class ButtonListener implements View.OnClickListener
@@ -304,7 +289,7 @@ public class MenuActivity extends Activity
             else
             {
                 //int index = linearLayout.indexOfChild(v);
-                showFileMenu(((FileButton)v).getCorrespondingFile());
+                invokeFileProcessor(((FileButton)v).getCorrespondingFile());
             }
         }
     }
@@ -325,21 +310,9 @@ public class MenuActivity extends Activity
         }
     }
 
-
-    void showFileMenu(File file)
-    {
-        invokeFileProcessor(file);
-    }
-
     void invokeFileChooserActivity()
     {
         FileChooserActivity.invokeFileChooser(this, OPEN_DOCUMENT_REQUEST_CODE);
-    }
-
-    void showMessagePermissionNotGranted()
-    {
-        Toast toast = Toast.makeText(this, "Impossible to proceed. Some permissions were not granted", Toast.LENGTH_LONG);
-        toast.show();
     }
 
     void invokeFileProcessor(File info)
@@ -391,7 +364,7 @@ public class MenuActivity extends Activity
         {
             if(!data.getBooleanExtra(PermissionGetter.DATA_ANSWER, false))
             {
-                permissionNotGranted();
+                showMessagePermissionsNotGranted();
             }
             else
             {
@@ -438,26 +411,10 @@ public class MenuActivity extends Activity
             }
             catch (IOException e)
             {
-                e.printStackTrace();
+                showMessage(e);
             }
         }
 
-    }
-
-    void showMessageFileExists(File file)
-    {
-        // TODO Message file exists
-        String template = getString(R.string.message_file_exists);
-        String msg = String.format(template, file.getName());
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
-    }
-
-    private void permissionNotGranted()
-    {
-        // TODO Permission not granted. Aborting
-        Log.v(MenuActivity.class.getName(), "Permission not granted!");
-        showMessagePermissionNotGranted();
-        finish();
     }
 
     void invokePrefsActivity()
@@ -500,7 +457,7 @@ public class MenuActivity extends Activity
             {
                 return false;
             }
-            File file = fileInfos[index];
+            File file = fileList[index];
             switch (item.getItemId())
             {
                 case R.id.open_item:
@@ -524,8 +481,62 @@ public class MenuActivity extends Activity
         }
     }
 
-    void sendError(Exception ex)
+    // Error messages
+
+    private void sendError(Exception ex)
     {
         ErrorSenderActivity.sendErrorReport(this, ex, "");
     }
+
+
+    private class onErrorFinishListener implements ErrorDialogBuilder.onFinishListener
+    {
+        @Override
+        public void onFinish()
+        {
+            finish();
+        }
+    }
+
+    private class onErrorNoActionListener implements ErrorDialogBuilder.onFinishListener
+    {
+        @Override
+        public void onFinish()
+        {
+
+        }
+    }
+
+    private void showMessage(String message)
+    {
+        ErrorDialogBuilder builder = new ErrorDialogBuilder(this, message, new onErrorNoActionListener());
+        builder.showDialog();
+    }
+
+    private void showMessage(Exception exception)
+    {
+        ErrorDialogBuilder builder = new ErrorDialogBuilder(this, exception.getMessage(), new onErrorNoActionListener());
+        builder.showDialog();
+    }
+
+    private void showMessageFileExists(File file)
+    {
+        String template = getString(R.string.message_file_exists);
+        String msg = String.format(template, file.getName());
+        ErrorDialogBuilder builder = new ErrorDialogBuilder(this, msg, new onErrorNoActionListener());
+        builder.showDialog();
+    }
+
+    private void showMessagePermissionsNotGranted()
+    {
+        ErrorDialogBuilder builder = new ErrorDialogBuilder(this, R.string.message_permissions_not_granted, new onErrorFinishListener());
+        builder.showDialog();
+    }
+
+    private void showMessageImpossibleToCreateFolder()
+    {
+        ErrorDialogBuilder builder = new ErrorDialogBuilder(this, "Impossible to create directory", new onErrorFinishListener());
+        builder.showDialog();
+    }
+
 }
