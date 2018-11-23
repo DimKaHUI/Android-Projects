@@ -34,5 +34,18 @@
         android:singleLine="true"
         android:title="@string/pref_path_display_name" />
 
+    <EditTextPreference
+        android:capitalize="words"
+        android:defaultValue="@string/pref_fakepwd_default"
+        android:inputType="textCapWords"
+        android:summary="@string/pref_fakepwd_summary"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_fakepwd_title"
+        android:key = "@string/pref_fakepwd_key"/>
+
+    <!-- android:key="@string/pref_storage_fakepwd_key" -->
+
 
 </PreferenceScreen>

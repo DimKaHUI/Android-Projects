@@ -54,5 +54,9 @@
     <string name="message_permissions_not_granted">Some permissions were not granted. Start application from icon and grant permissions!</string>
     <string name="message_file_not_found">File not found!</string>
     <string name="message_no_activity">No activity to open this file</string>
+    <string name="pref_fakepwd_key">fakepwd_key</string>
+    <string name="pref_fakepwd_title">Fake password</string>
+    <string name="pref_fakepwd_summary">If anybody enters fake password, CipherBox displays random files from your gallery. This element is displayed in preferences only if fake password is not set or was entered</string>
+    <string name="pref_fakepwd_default"></string>
 
 </resources>
