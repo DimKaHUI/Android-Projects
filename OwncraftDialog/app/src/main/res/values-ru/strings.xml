@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OwncraftDialog</string>
+    <string name="service_error">Сейчас сервер не доступен. Попробуйте позднее</string>
+    <string name="service_ok">Подключение успешно!</string>
+    <string name="user_name_ui">Вы</string>
+    <string name="permission_error">отказано!</string>
+    <string name="ui_text_sendbutton">ОК</string>
+</resources>
