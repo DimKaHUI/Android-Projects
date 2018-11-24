@@ -9,6 +9,7 @@ public abstract class WatsonApi
 
     public abstract void SetSendUserInputCallback(WatsonCallback callback);
     public abstract void SetStartSessionCallback(WatsonCallback callback);
+    public abstract  void SetEndSessionCallback(WatsonCallback callback);
 
     public static class WatsonCallback
     {

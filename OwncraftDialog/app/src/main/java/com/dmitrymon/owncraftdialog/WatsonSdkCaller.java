@@ -104,6 +104,12 @@ public class WatsonSdkCaller extends WatsonApi
         startSessionCallback = callback;
     }
 
+    @Override
+    public void SetEndSessionCallback(WatsonCallback callback)
+    {
+        endSessionCallback = callback;
+    }
+
     private boolean startSessionAsync()
     {
         try
