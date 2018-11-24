@@ -154,14 +154,14 @@ public class MainActivity extends AppCompatActivity
         @Override
         public void onSuccess()
         {
-            addDialogMessage("Owncraft health", getString(R.string.service_ok));
+            addDialogMessage(getString(R.string.server_name), getString(R.string.service_ok));
             ChangeSendButtonState(true);
         }
 
         @Override
         public void onFail()
         {
-            addDialogMessage("Owncraft health", getString(R.string.service_error));
+            addDialogMessage(getString(R.string.server_name), getString(R.string.service_error));
             ChangeSendButtonState(false);
         }
     }
