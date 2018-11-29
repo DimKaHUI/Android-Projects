@@ -51,6 +51,19 @@ public class TestActivity extends AppCompatActivity
         }
     };
 
+    Handler handlerConnection = new Handler();
+
+    Runnable runnableConnection = new Runnable()
+    {
+
+        @Override
+        public void run()
+        {
+            new ConnectionChecker().execute();
+            handlerConnection.postDelayed(this, 1000);
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -66,12 +79,18 @@ public class TestActivity extends AppCompatActivity
         sendPost.setOnClickListener(new Listener());
 
         handlerService.postDelayed(runnableService, 1000);
+        handlerConnection.postDelayed(runnableConnection, 1000);
     }
 
     @Override
     public void onDestroy()
     {
-        handlerService.removeCallbacksAndMessages(null);
+        if(handlerService != null)
+            handlerService.removeCallbacksAndMessages(null);
+
+        if(handlerConnection != null)
+            handlerConnection.removeCallbacksAndMessages(null);
+
         super.onDestroy();
     }
 
@@ -174,6 +193,57 @@ public class TestActivity extends AppCompatActivity
         protected void onPostExecute(Void v)
         {
             Toast.makeText(getApplicationContext(), "Response code: " + responseCode, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private class ConnectionChecker extends AsyncTask<Void, Void, Void>
+    {
+
+        int responseCode = -1;
+
+        @Override
+        protected Void doInBackground(Void... booleans)
+        {
+            URL url = null;
+
+            try
+            {
+
+                url = new URL(OwncraftServerListener.ALERT_CHECK_URL);
+
+                HttpURLConnection urlConnection = (HttpURLConnection)url.openConnection();
+
+                urlConnection.connect();
+
+                responseCode = urlConnection.getResponseCode();
+
+                return null;
+
+            } catch (MalformedURLException e)
+            {
+                e.printStackTrace();
+            } catch (UnsupportedEncodingException e)
+            {
+                e.printStackTrace();
+            } catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void v)
+        {
+            //Toast.makeText(getApplicationContext(), "Response code: " + responseCode, Toast.LENGTH_SHORT).show();
+            TextView textView = findViewById(R.id.connectionInfo);
+            if(responseCode == -1)
+            {
+                textView.setText("Unavailable");
+            }
+            else
+                textView.setText("Response code: " + responseCode);
         }
     }
 
