@@ -266,11 +266,13 @@ public class MainActivity extends AppCompatActivity
         @Override
         public void onSuccess()
         {
+
             addDialogMessage("Owncraft health", getString(R.string.service_ok));
 
             EditText textBox = findViewById(R.id.editText);
             textBox.setText("");
             addDialogMessage(getString(R.string.server_name), watson.ReadWatsonAnswer());
+
 
             ChangeSendButtonState(true);
         }
@@ -278,7 +280,7 @@ public class MainActivity extends AppCompatActivity
         @Override
         public void onFail()
         {
-            addDialogMessage("Owncraft health", getString(R.string.service_error));
+            addDialogMessage(getString(R.string.server_name), getString(R.string.service_error));
             ChangeSendButtonState(false);
         }
     }

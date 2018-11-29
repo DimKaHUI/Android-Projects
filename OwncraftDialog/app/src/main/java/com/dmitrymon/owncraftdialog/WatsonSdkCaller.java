@@ -79,7 +79,7 @@ public class WatsonSdkCaller extends WatsonApi
     @Override
     public void EndSession()
     {
-
+        new EndSessionTask().execute();
     }
 
     @Override
@@ -111,6 +111,12 @@ public class WatsonSdkCaller extends WatsonApi
     public void SetStartSessionCallback(WatsonCallback callback)
     {
         startSessionCallback = callback;
+    }
+
+    @Override
+    public void SetEndSessionCallback(WatsonCallback callback)
+    {
+        endSessionCallback = callback;
     }
 
     private boolean startSessionAsync()
@@ -147,14 +153,27 @@ public class WatsonSdkCaller extends WatsonApi
 
     private boolean endSessionAsync()
     {
-        DeleteSessionOptions dOptions;
-        DeleteSessionOptions.Builder doBuilder = new DeleteSessionOptions.Builder();
-        doBuilder.sessionId(sessionId);
-        doBuilder.assistantId(ASSISTANT_ID);
-        dOptions = doBuilder.build();
-        watsonAssistantRuntime.deleteSession(dOptions).execute();
+        try
+        {
+            DeleteSessionOptions dOptions;
+            DeleteSessionOptions.Builder doBuilder = new DeleteSessionOptions.Builder();
+            doBuilder.sessionId(sessionId);
+            doBuilder.assistantId(ASSISTANT_ID);
+            dOptions = doBuilder.build();
+            watsonAssistantRuntime.deleteSession(dOptions).execute();
 
-        return true;
+            return true;
+        }
+        catch(NotFoundException ex)
+        {
+            ex.printStackTrace();
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+
+        return false;
     }
 
     private boolean sendUserInputAsync(String text)
@@ -245,6 +264,28 @@ public class WatsonSdkCaller extends WatsonApi
                     startSessionCallback.onSuccess();
                 else
                     startSessionCallback.onFail();
+            }
+        }
+    }
+
+    private class EndSessionTask extends AsyncTask<Void, Void, Boolean>
+    {
+
+        @Override
+        protected Boolean doInBackground(Void... voids)
+        {
+            boolean result = endSessionAsync();
+            return result;
+        }
+
+        protected void onPostExecute(Boolean res)
+        {
+            if(sendUserInputCallback != null)
+            {
+                if(res)
+                    endSessionCallback.onSuccess();
+                else
+                    endSessionCallback.onFail();
             }
         }
     }
