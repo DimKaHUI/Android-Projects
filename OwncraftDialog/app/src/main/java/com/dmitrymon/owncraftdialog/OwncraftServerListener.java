@@ -207,7 +207,7 @@ public class OwncraftServerListener extends Service
             }
 
             // DEBUG! TODO Remove debug code
-            startConversation();
+            //startConversation();
 
             Log.v("Server answered", "Server responce: " + value);
         } catch (JSONException e)
