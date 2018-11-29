@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -15,19 +14,16 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
-import android.widget.TextClock;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.Objects;
 
-import static com.dmitrymon.owncraftdialog.WatsonApi.*;
-
 public class MainActivity extends AppCompatActivity
 {
 
     public static String ACTION_START_CONVERSATION = "com.dmitrymon.owncraftdialog.ACTION_START_CONVERSATION";
+
 
     private final int PERMISSION_REQUEST_ID = 123;
 
@@ -45,19 +41,21 @@ public class MainActivity extends AppCompatActivity
 
         processViews();
 
+        if(!wasLoaded)
+        {
+            Intent intent = getIntent();
+            processIntent(intent);
+        }
+    }
+
+    private void startListener()
+    {
         if(!isListenerRunning(OwncraftServerListener.class))
         {
             Intent startServiceIntent = new Intent(getApplicationContext(), OwncraftServerListener.class);
             startServiceIntent.setAction(OwncraftServerListener.ACTION_START_FROM_ACTIVITY);
 
             startService(startServiceIntent);
-        }
-
-        if(!wasLoaded)
-        {
-
-            Intent intent = getIntent();
-            processIntent(intent);
         }
     }
 
@@ -70,6 +68,7 @@ public class MainActivity extends AppCompatActivity
     private boolean isListenerRunning(Class<?> serviceClass)
     {
         ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        assert manager != null;
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
             if (serviceClass.getName().equals(service.service.getClassName())) {
                 return true;
@@ -88,7 +87,7 @@ public class MainActivity extends AppCompatActivity
 
         if(!Objects.equals(intent.getAction(), ACTION_START_CONVERSATION))
         {
-            finish();
+            onJobDone();
             return;
         }
 
@@ -188,9 +187,15 @@ public class MainActivity extends AppCompatActivity
                 if(!conversationEnded)
                     sendMessageToWatson();
                 else
-                    finish();
+                    onJobDone();
             }
         }
+    }
+
+    private void onJobDone()
+    {
+        startListener();
+        finish();
     }
 
     private void addDialogMessage(String sender, String message)

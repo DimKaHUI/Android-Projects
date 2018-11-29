@@ -27,12 +27,19 @@
             android:enabled="true"
             android:exported="false" />
 
-        <receiver android:name="com.dmitrymon.owncraftdialog.AutorunRecevier">
+        <receiver android:name=".AutorunRecevier">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
 
+        <activity android:name=".TestActivity" android:label="Test Owncraft Dialog">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

@@ -1,8 +1,6 @@
 package com.dmitrymon.owncraftdialog;
 
 import android.app.Service;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Handler;
@@ -11,8 +9,6 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.google.gson.JsonObject;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -20,14 +16,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.security.cert.Certificate;
 import java.util.Objects;
-
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLPeerUnverifiedException;
 
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 
@@ -36,12 +27,16 @@ public class OwncraftServerListener extends Service
     public static String ACTION_START_FROM_AUTORUN = "com.dmitrymon.owncraftdialog.ACTION_START_FROM_AUTORUN";
     public static String ACTION_START_FROM_ACTIVITY = "com.dmitrymon.owncraftdialog.ACTION_START_FROM_ACTIVITY";
 
-    public static String DATA_DOWNLOAD_URL = "http://195.19.40.201:31168/get_health_alert";
+    public static String ACTION_CONVERSATION_ENDED = "com.dmitrymon.owncraftdialog.ACTION_CONVERSATION_ENDED";
+
+    public static String ALERT_CHECK_URL = "http://195.19.40.201:31168/get_health_alert";
     public static String DATA_UPLOAD_URL = "http://195.19.40.201:31168/"; // TODO Upload
     public static String ALERT_RESET_URL = "http://195.19.40.201:31168/reset_health_alert";
     public static String ALERT_SET_URL = "http://195.19.40.201:31168/set_health_alert";
 
     private final int DELAY_MS = 5000;
+
+    private Handler handler;
 
     public OwncraftServerListener()
     {
@@ -67,8 +62,6 @@ public class OwncraftServerListener extends Service
         else
             stopSelf();
 
-        Toast toast = Toast.makeText(getApplicationContext(), "Listener service invoked!", Toast.LENGTH_LONG);
-        toast.show();
 
         initListener();
 
@@ -85,10 +78,10 @@ public class OwncraftServerListener extends Service
     private void initListener()
     {
 
-        Toast toast = Toast.makeText(getApplicationContext(), "Listener initiated!", Toast.LENGTH_LONG);
+        Toast toast = Toast.makeText(getApplicationContext(), "Owncraft dialog initiated!", Toast.LENGTH_LONG);
         toast.show();
 
-        final Handler handler = new Handler();
+        handler = new Handler();
 
         Runnable runnable = new Runnable()
         {
@@ -131,6 +124,7 @@ public class OwncraftServerListener extends Service
     {
 
         private Callback callback;
+        private JSONObject jsonObj;
 
         void setCallback(Callback callback)
         {
@@ -142,11 +136,9 @@ public class OwncraftServerListener extends Service
         {
             try
             {
-                String json = getJsonFromServer(DATA_DOWNLOAD_URL);
+                String json = getJsonFromServer(ALERT_CHECK_URL);
 
-                JSONObject obj = new JSONObject(json);
-
-                callback.OnFinish(obj);
+                jsonObj = new JSONObject(json);
 
             } catch (IOException e)
             {
@@ -157,6 +149,12 @@ public class OwncraftServerListener extends Service
             }
 
             return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void v)
+        {
+            callback.OnFinish(jsonObj);
         }
 
         static String getJsonFromServer(String url) throws IOException
@@ -184,9 +182,16 @@ public class OwncraftServerListener extends Service
         {
             try
             {
-                URL url = new URL(OwncraftServerListener.DATA_UPLOAD_URL);
+                URL url = new URL(OwncraftServerListener.ALERT_RESET_URL);
                 HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+
+                urlConnection.setRequestMethod("POST");
+
                 urlConnection.connect();
+
+                int responseCode = urlConnection.getResponseCode();
+
+                Log.e("URL Test", "SET command sent! Response code: " + responseCode);
             }
             catch (Exception ex)
             {
@@ -206,9 +211,6 @@ public class OwncraftServerListener extends Service
                 startConversation();
             }
 
-            // DEBUG! TODO Remove debug code
-            //startConversation();
-
             Log.v("Server answered", "Server responce: " + value);
         } catch (JSONException e)
         {
@@ -224,5 +226,16 @@ public class OwncraftServerListener extends Service
         startConversation.setFlags(FLAG_ACTIVITY_NEW_TASK);
 
         startActivity(startConversation);
+
+        stopSelf();
+    }
+
+    @Override
+    public void onDestroy()
+    {
+        handler.removeCallbacksAndMessages(null);
+
+        Log.e("Service", "OnDestroy!");
+        super.onDestroy();
     }
 }
