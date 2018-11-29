@@ -238,7 +238,8 @@ public class OwncraftServerListener extends Service
     @Override
     public void onDestroy()
     {
-        handler.removeCallbacksAndMessages(null);
+        if(handler != null)
+            handler.removeCallbacksAndMessages(null);
 
         Log.e("Service", "OnDestroy!");
         super.onDestroy();

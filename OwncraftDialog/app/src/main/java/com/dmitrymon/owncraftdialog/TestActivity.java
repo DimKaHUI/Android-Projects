@@ -12,22 +12,25 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.InputStreamReader;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 
 public class TestActivity extends AppCompatActivity
 {
 
-    Handler handler = new Handler();
+    Handler handlerService = new Handler();
 
-    Runnable runnable = new Runnable()
+    Runnable runnableService = new Runnable()
     {
 
         @Override
@@ -41,10 +44,10 @@ public class TestActivity extends AppCompatActivity
             else
                 labelText = "Service stopped";
 
-            TextView textView = findViewById(R.id.infoLabel);
+            TextView textView = findViewById(R.id.serviceInfo);
             textView.setText(labelText);
 
-            handler.postDelayed(this, 1000);
+            handlerService.postDelayed(this, 1000);
         }
     };
 
@@ -59,13 +62,16 @@ public class TestActivity extends AppCompatActivity
         Button resetButton = findViewById(R.id.buttonReset);
         resetButton.setOnClickListener(new Listener());
 
-        handler.postDelayed(runnable, 1000);
+        Button sendPost = findViewById(R.id.sendPost);
+        sendPost.setOnClickListener(new Listener());
+
+        handlerService.postDelayed(runnableService, 1000);
     }
 
     @Override
     public void onDestroy()
     {
-        handler.removeCallbacksAndMessages(null);
+        handlerService.removeCallbacksAndMessages(null);
         super.onDestroy();
     }
 
@@ -80,6 +86,8 @@ public class TestActivity extends AppCompatActivity
             if (v == findViewById(R.id.buttonReset))
                 new SendCommand().execute(false);
 
+            if(v == findViewById(R.id.sendPost))
+                new SendPost().execute();
         }
     }
 
@@ -99,6 +107,73 @@ public class TestActivity extends AppCompatActivity
             }
 
             return null;
+        }
+    }
+
+    private class SendPost extends AsyncTask<Void, Void, Void>
+    {
+
+        int responseCode = -1;
+
+        @Override
+        protected Void doInBackground(Void... booleans)
+        {
+            URL url = null;
+
+            try
+            {
+
+                String result = new JSONObject()
+                        .put("alertData", "True")
+                        .put("auxData", "False")
+                        .put("name", "Test name")
+                        .put("age", "25")
+                        .put("pain", "True")
+                        .put("location", "Test city")
+                        .put("drinking", "False")
+                        .put("smoking", "False")
+                        .toString();
+
+                url = new URL(OwncraftServerListener.DATA_UPLOAD_URL);
+
+                HttpURLConnection urlConnection = (HttpURLConnection)url.openConnection();
+
+                OutputStream outputStream = new BufferedOutputStream(urlConnection.getOutputStream());
+
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"));
+
+                writer.write(result);
+                writer.flush();
+                writer.close();
+                outputStream.close();
+
+                urlConnection.connect();
+
+                responseCode = urlConnection.getResponseCode();
+
+                return null;
+
+            } catch (MalformedURLException e)
+            {
+                e.printStackTrace();
+            } catch (UnsupportedEncodingException e)
+            {
+                e.printStackTrace();
+            } catch (IOException e)
+            {
+                e.printStackTrace();
+            } catch (JSONException e)
+            {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void v)
+        {
+            Toast.makeText(getApplicationContext(), "Response code: " + responseCode, Toast.LENGTH_SHORT).show();
         }
     }
 
