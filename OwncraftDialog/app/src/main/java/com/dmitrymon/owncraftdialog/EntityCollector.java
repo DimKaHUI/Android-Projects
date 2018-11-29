@@ -115,6 +115,40 @@ class EntityCollector
 
     public String getData()
     {
-        return isAlertDataCollected() + " " + isAuxDataCollected() + " " + name + " " + age + " " + pain + " " + location + " " + drinking + " " + smoking;
+        // Format
+        /*
+        * Field: alertData          Values: True/False.             Comment: if true -> only name, age, pain and location are present
+        * Field: auxData            Values: True/False.             Comment: if true -> only name, drinking, smoking are present
+        * Field: name               Values: <different strings>
+        * Field: age                Values: <different integers>
+        * Field: pain               Values: True/False
+        * Field: location           Values: <different strings>
+        * Field: drinking           Values: True/False
+        * Field: smoking            Values: True/False
+        */
+
+        try
+        {
+            String result = new JSONObject()
+                    .put("alertData", isAlertDataCollected())
+                    .put("auxData", isAuxDataCollected())
+                    .put("name", name)
+                    .put("age", age)
+                    .put("pain", pain)
+                    .put("location", location)
+                    .put("drinking", drinking)
+                    .put("smoking", smoking)
+                    .toString();
+
+            return result;
+
+        } catch (JSONException e)
+        {
+            e.printStackTrace();
+        }
+
+        Log.e("EntityCollector","Error: JSON building failed");
+
+        return "";
     }
 }
