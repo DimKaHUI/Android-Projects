@@ -26,15 +26,18 @@ public class OwncraftServerListener extends Service
 {
     public static String ACTION_START_FROM_AUTORUN = "com.dmitrymon.owncraftdialog.ACTION_START_FROM_AUTORUN";
     public static String ACTION_START_FROM_ACTIVITY = "com.dmitrymon.owncraftdialog.ACTION_START_FROM_ACTIVITY";
+    public static String ACTION_START_FROM_SELF = "com.dmitrymon.owncraftdialog.ACTION_START_FROM_SELF";
 
-    public static String ACTION_CONVERSATION_ENDED = "com.dmitrymon.owncraftdialog.ACTION_CONVERSATION_ENDED";
+    public static String ACTION_FORCE_STOP = "com.dmitrymon.owncraftdialog.ACTION_FORCE_STOP";
 
     public static String ALERT_CHECK_URL = "http://195.19.40.201:31168/get_health_alert";
-    public static String DATA_UPLOAD_URL = "http://195.19.40.201:31168/"; // TODO Upload
+    public static String DATA_UPLOAD_URL = "http://195.19.40.201:31168/update_health_data";
     public static String ALERT_RESET_URL = "http://195.19.40.201:31168/reset_health_alert";
     public static String ALERT_SET_URL = "http://195.19.40.201:31168/set_health_alert";
 
     private final int DELAY_MS = 5000;
+
+    private boolean forceStop;
 
     private Handler handler;
 
@@ -50,10 +53,20 @@ public class OwncraftServerListener extends Service
             stopSelf();
             return Service.START_STICKY;
         }
-
-        if(Objects.equals(intent.getAction(), ACTION_START_FROM_AUTORUN))
+        else if(Objects.equals(intent.getAction(), ACTION_START_FROM_AUTORUN))
         {
 
+        }
+        else if(intent.getAction().equals(ACTION_FORCE_STOP))
+        {
+            forceStop = true;
+            Log.e("Listener","Force stop received!");
+            stopSelf();
+            return Service.START_NOT_STICKY;
+        }
+        else if(intent.getAction().equals(ACTION_START_FROM_SELF))
+        {
+            Log.e("Listener", "SELF RESTART");
         }
         else if (Objects.equals(intent.getAction(), ACTION_START_FROM_ACTIVITY))
         {
@@ -219,7 +232,8 @@ public class OwncraftServerListener extends Service
         }
         catch (NullPointerException ex)
         {
-            ex.printStackTrace();
+            //ex.printStackTrace();
+            Log.e("Listener","JSON Was lot downloaded. Check connection");
         }
 
     }
@@ -235,13 +249,26 @@ public class OwncraftServerListener extends Service
         stopSelf();
     }
 
+    private void seltRestart()
+    {
+        Intent selfIntent = new Intent(getApplicationContext(), this.getClass());
+        selfIntent.setAction(ACTION_START_FROM_SELF);
+        selfIntent.setFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+
+        Log.e("Service", "Restarting service!");
+        startService(selfIntent);
+    }
+
     @Override
     public void onDestroy()
     {
         if(handler != null)
             handler.removeCallbacksAndMessages(null);
 
-        Log.e("Service", "OnDestroy!");
+
         super.onDestroy();
+
+        if(!forceStop)
+            seltRestart();
     }
 }

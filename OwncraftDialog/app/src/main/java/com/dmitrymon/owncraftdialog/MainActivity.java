@@ -169,9 +169,12 @@ public class MainActivity extends AppCompatActivity
     {
 
         @Override
-        public void OnFinish()
+        public void OnFinish(boolean success)
         {
-            Toast.makeText(getApplicationContext(), "Data was successfully collected and delivered to Owncraft!", Toast.LENGTH_SHORT).show();
+            if(success)
+                Toast.makeText(getApplicationContext(), "Data was successfully collected and delivered to Owncraft!", Toast.LENGTH_SHORT).show();
+            else
+                Toast.makeText(getApplicationContext(), "An error occured while data sending!", Toast.LENGTH_SHORT).show();
         }
     }
 

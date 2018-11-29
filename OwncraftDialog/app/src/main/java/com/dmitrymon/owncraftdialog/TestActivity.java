@@ -2,6 +2,7 @@ package com.dmitrymon.owncraftdialog;
 
 import android.app.ActivityManager;
 import android.content.Context;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
@@ -17,6 +18,7 @@ import org.json.JSONObject;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -78,6 +80,12 @@ public class TestActivity extends AppCompatActivity
         Button sendPost = findViewById(R.id.sendPost);
         sendPost.setOnClickListener(new Listener());
 
+        Button exitButton = findViewById(R.id.exitButton);
+        exitButton.setOnClickListener(new Listener());
+
+        Button killServiceButton = findViewById(R.id.killServiceButton);
+        killServiceButton.setOnClickListener(new Listener());
+
         handlerService.postDelayed(runnableService, 1000);
         handlerConnection.postDelayed(runnableConnection, 1000);
     }
@@ -107,6 +115,12 @@ public class TestActivity extends AppCompatActivity
 
             if(v == findViewById(R.id.sendPost))
                 new SendPost().execute();
+
+            if(v == findViewById(R.id.exitButton))
+                finish();
+
+            if(v == findViewById(R.id.killServiceButton))
+                stopService();
         }
     }
 
@@ -137,50 +151,24 @@ public class TestActivity extends AppCompatActivity
         @Override
         protected Void doInBackground(Void... booleans)
         {
-            URL url = null;
 
             try
             {
 
                 String result = new JSONObject()
-                        .put("alertData", "True")
-                        .put("auxData", "False")
-                        .put("name", "Test name")
-                        .put("age", "25")
-                        .put("pain", "True")
+                        .put("alertData", "false")
+                        .put("auxData", "true")
+                        .put("name", "Joe")
+                        .put("age", "54")
+                        .put("pain", "false")
                         .put("location", "Test city")
-                        .put("drinking", "False")
-                        .put("smoking", "False")
+                        .put("drinking", "true")
+                        .put("smoking", "true")
                         .toString();
 
-                url = new URL(OwncraftServerListener.DATA_UPLOAD_URL);
+                OwncraftServerSender sender = new OwncraftServerSender(new SendCallback());
+                responseCode = sender.sendData(result);
 
-                HttpURLConnection urlConnection = (HttpURLConnection)url.openConnection();
-
-                OutputStream outputStream = new BufferedOutputStream(urlConnection.getOutputStream());
-
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"));
-
-                writer.write(result);
-                writer.flush();
-                writer.close();
-                outputStream.close();
-
-                urlConnection.connect();
-
-                responseCode = urlConnection.getResponseCode();
-
-                return null;
-
-            } catch (MalformedURLException e)
-            {
-                e.printStackTrace();
-            } catch (UnsupportedEncodingException e)
-            {
-                e.printStackTrace();
-            } catch (IOException e)
-            {
-                e.printStackTrace();
             } catch (JSONException e)
             {
                 e.printStackTrace();
@@ -193,6 +181,16 @@ public class TestActivity extends AppCompatActivity
         protected void onPostExecute(Void v)
         {
             Toast.makeText(getApplicationContext(), "Response code: " + responseCode, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private class SendCallback implements OwncraftServerSender.Callback
+    {
+
+        @Override
+        public void OnFinish(boolean success)
+        {
+            Log.e("Test","Test data sent!");
         }
     }
 
@@ -227,7 +225,7 @@ public class TestActivity extends AppCompatActivity
                 e.printStackTrace();
             } catch (IOException e)
             {
-                e.printStackTrace();
+                //e.printStackTrace();
             }
 
             return null;
@@ -287,6 +285,13 @@ public class TestActivity extends AppCompatActivity
         {
             ex.printStackTrace();
         }
+    }
+
+    private void stopService()
+    {
+        Intent stopService = new Intent(this, OwncraftServerListener.class);
+        stopService.setAction(OwncraftServerListener.ACTION_FORCE_STOP);
+        startService(stopService);
     }
 
     private boolean isListenerRunning(Class<?> serviceClass)
