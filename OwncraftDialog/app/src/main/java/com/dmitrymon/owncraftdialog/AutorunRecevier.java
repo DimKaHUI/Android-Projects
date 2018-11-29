@@ -12,7 +12,7 @@ public class AutorunRecevier extends BroadcastReceiver
     @Override
     public void onReceive(Context context, Intent intent)
     {
-        if(Objects.equals(intent.getAction(), Intent.ACTION_BOOT_COMPLETED))
+        if(Objects.equals(intent.getAction(), Intent.ACTION_BOOT_COMPLETED) || Objects.equals(intent.getAction(), Intent.ACTION_LOCKED_BOOT_COMPLETED))
         {
             Toast toast = Toast.makeText(context.getApplicationContext(), "Autorun broadcast received!", Toast.LENGTH_LONG);
             toast.show();
