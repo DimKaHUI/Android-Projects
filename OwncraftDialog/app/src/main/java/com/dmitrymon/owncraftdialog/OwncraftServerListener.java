@@ -191,7 +191,7 @@ public class OwncraftServerListener extends Service
 
                 int responseCode = urlConnection.getResponseCode();
 
-                Log.e("URL Test", "SET command sent! Response code: " + responseCode);
+                Log.e("URL Test", "RESET command sent! Response code: " + responseCode);
             }
             catch (Exception ex)
             {
@@ -212,9 +212,14 @@ public class OwncraftServerListener extends Service
             }
 
             Log.v("Server answered", "Server responce: " + value);
-        } catch (JSONException e)
+        }
+        catch (JSONException e)
         {
             e.printStackTrace();
+        }
+        catch (NullPointerException ex)
+        {
+            ex.printStackTrace();
         }
 
     }
