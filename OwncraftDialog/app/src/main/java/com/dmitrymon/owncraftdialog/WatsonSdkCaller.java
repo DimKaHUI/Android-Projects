@@ -2,6 +2,7 @@ package com.dmitrymon.owncraftdialog;
 
 import android.content.Context;
 import android.os.AsyncTask;
+import android.util.Log;
 
 import com.ibm.watson.developer_cloud.assistant.v2.model.CreateSessionOptions;
 import com.ibm.watson.developer_cloud.assistant.v2.model.DeleteSessionOptions;
@@ -9,6 +10,7 @@ import com.ibm.watson.developer_cloud.assistant.v2.model.MessageInput;
 import com.ibm.watson.developer_cloud.assistant.v2.model.MessageOptions;
 import com.ibm.watson.developer_cloud.assistant.v2.model.MessageResponse;
 import com.ibm.watson.developer_cloud.assistant.v2.model.SessionResponse;
+import com.ibm.watson.developer_cloud.http.ServiceCall;
 import com.ibm.watson.developer_cloud.service.exception.NotFoundException;
 import com.ibm.watson.developer_cloud.service.exception.RequestTooLargeException;
 import com.ibm.watson.developer_cloud.service.exception.ServiceResponseException;
@@ -24,7 +26,6 @@ import java.util.Queue;
 public class WatsonSdkCaller extends WatsonApi
 {
     private final String VERSION = "2018-09-20";
-    private final String WORKSPACE_ID = "eb2d39d2-212e-4d39-aa80-ce2067194dbf";
     private final String URL = "https://gateway.watsonplatform.net/assistant/api";
     private final String ASSISTANT_ID = "e818b527-90bc-4843-8706-73efaf0aa215";
 
@@ -35,7 +36,6 @@ public class WatsonSdkCaller extends WatsonApi
     private com.ibm.watson.developer_cloud.assistant.v2.Assistant watsonAssistantRuntime;
     private String sessionId;
 
-
     private Context context;
 
     private Queue<String> responseBuffer = new ArrayDeque<>();
@@ -45,11 +45,20 @@ public class WatsonSdkCaller extends WatsonApi
     private WatsonCallback sendUserInputCallback;
     private WatsonCallback startSessionCallback;
     private WatsonCallback endSessionCallback;
+    private WatsonCallback endOfConversation;
 
+    private EntityCollector entityCollector;
+
+    public EntityCollector getEntityCollector()
+    {
+        return entityCollector;
+    }
 
     public WatsonSdkCaller(Context applicationContext)
     {
         context = applicationContext;
+
+        entityCollector = new EntityCollector();
 
         establishConnectionOld();
     }
@@ -116,6 +125,12 @@ public class WatsonSdkCaller extends WatsonApi
 
             sessionId = response.getSessionId();
 
+            MessageOptions options1 = new MessageOptions.Builder().assistantId(ASSISTANT_ID).sessionId(sessionId).build();
+
+            MessageResponse welcomeResponce = watsonAssistantRuntime.message(options1).execute();
+
+            responseBuffer.add(welcomeResponce.toString());
+
             return true;
         }
         catch(NotFoundException ex)
@@ -159,6 +174,11 @@ public class WatsonSdkCaller extends WatsonApi
             MessageResponse response = watsonAssistantRuntime.message(options).execute();
 
             responseBuffer.add(response.toString());
+
+            entityCollector.onNewMessage(new JSONObject(response.toString()));
+
+            Log.e("New response", entityCollector.toString());
+
             return true;
         }
         catch (NotFoundException ex)
@@ -235,6 +255,9 @@ public class WatsonSdkCaller extends WatsonApi
         try
         {
             String jsonText = responseBuffer.remove();
+
+            Log.w("Watson answer", jsonText);
+
             JSONObject obj = new JSONObject(jsonText);
             JSONObject output = obj.getJSONObject("output");
             JSONArray answerArray = output.getJSONArray("generic");

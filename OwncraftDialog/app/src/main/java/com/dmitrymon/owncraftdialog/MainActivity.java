@@ -1,23 +1,41 @@
 package com.dmitrymon.owncraftdialog;
 
 import android.Manifest;
+import android.app.ActivityManager;
+import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextClock;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.util.Objects;
 
 import static com.dmitrymon.owncraftdialog.WatsonApi.*;
 
 public class MainActivity extends AppCompatActivity
 {
 
+    public static String ACTION_START_CONVERSATION = "com.dmitrymon.owncraftdialog.ACTION_START_CONVERSATION";
+
     private final int PERMISSION_REQUEST_ID = 123;
 
     private WatsonApi watson;
+
+    private boolean wasLoaded;
+
+    private boolean conversationEnded;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -25,10 +43,61 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        processPermissions();
-
         processViews();
+
+        if(!isListenerRunning(OwncraftServerListener.class))
+        {
+            Intent startServiceIntent = new Intent(getApplicationContext(), OwncraftServerListener.class);
+            startServiceIntent.setAction(OwncraftServerListener.ACTION_START_FROM_ACTIVITY);
+
+            startService(startServiceIntent);
+        }
+
+        if(!wasLoaded)
+        {
+
+            Intent intent = getIntent();
+            processIntent(intent);
+        }
     }
+
+    @Override
+    protected void onNewIntent(Intent intent)
+    {
+        processIntent(intent);
+    }
+
+    private boolean isListenerRunning(Class<?> serviceClass)
+    {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void processIntent(Intent intent)
+    {
+        if(wasLoaded)
+        {
+            Log.i(getPackageName(), "Received new intent! Ignore");
+            return;
+        }
+
+        if(!Objects.equals(intent.getAction(), ACTION_START_CONVERSATION))
+        {
+            finish();
+            return;
+        }
+
+        wasLoaded = true;
+
+        processPermissions();
+    }
+
+
 
     void processViews()
     {
@@ -85,6 +154,28 @@ public class MainActivity extends AppCompatActivity
             processPermissionsOk();
     }
 
+    private void sendCollectedData()
+    {
+        OwncraftServerSender sender = new OwncraftServerSender(new SenderCallback());
+
+        WatsonSdkCaller caller = (WatsonSdkCaller)watson;
+
+        EntityCollector collector = caller.getEntityCollector();
+
+        sender.sendData(collector.getData());
+
+    }
+
+    private class SenderCallback implements OwncraftServerSender.Callback
+    {
+
+        @Override
+        public void OnFinish()
+        {
+            Toast.makeText(getApplicationContext(), "Data was successfully collected and delivered to Owncraft!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
 
     private class ButtonListener implements View.OnClickListener
     {
@@ -94,23 +185,29 @@ public class MainActivity extends AppCompatActivity
         {
             if(v == findViewById(R.id.sendButton))
             {
-                sendMessageToWatson();
+                if(!conversationEnded)
+                    sendMessageToWatson();
+                else
+                    finish();
             }
         }
     }
 
     private void addDialogMessage(String sender, String message)
     {
-        TextView textView = findViewById(R.id.dialogTextView);
 
-        String text = textView.getText().toString();
-        text += sender;
-        text += '\n';
-        text += message;
-        text += '\n';
-        text += '\n';
+        TextView view = new TextView(this);
 
-        textView.setText(text);
+        String result = sender + "\n" + message;
+
+        view.setText(result);
+        view.setGravity(Gravity.BOTTOM | Gravity.END);
+        view.setTextAlignment(View.TEXT_ALIGNMENT_GRAVITY);
+        view.setTextColor(Color.BLACK);
+
+        LinearLayout list = findViewById(R.id.dialogView);
+        //list.addView(view);
+        list.addView(view);
     }
 
     private void sendMessageToWatson()
@@ -139,6 +236,21 @@ public class MainActivity extends AppCompatActivity
             textBox.setText("");
             addDialogMessage(getString(R.string.server_name), watson.ReadWatsonAnswer());
             ChangeSendButtonState(true);
+
+            WatsonSdkCaller caller = (WatsonSdkCaller)watson;
+
+            EntityCollector collector = caller.getEntityCollector();
+
+            if(collector.isAlertDataCollected() || collector.isAuxDataCollected() || (collector.isHadActivityCollected() && collector.getHadActivity()))
+            {
+                conversationEnded = true;
+                if(!collector.getHadActivity())
+                {
+                    sendCollectedData();
+                }
+
+                addDialogMessage(getString(R.string.server_name), "Dialog ended! Press OK to exit");
+            }
         }
 
         @Override
@@ -155,6 +267,11 @@ public class MainActivity extends AppCompatActivity
         public void onSuccess()
         {
             addDialogMessage("Owncraft health", getString(R.string.service_ok));
+
+            EditText textBox = findViewById(R.id.editText);
+            textBox.setText("");
+            addDialogMessage(getString(R.string.server_name), watson.ReadWatsonAnswer());
+
             ChangeSendButtonState(true);
         }
 
