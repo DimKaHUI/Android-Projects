@@ -1,7 +1,6 @@
 package com.dmitrymon.dbdirl;
 
 import android.annotation.SuppressLint;
-import android.content.Intent;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -10,27 +9,26 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.List;
 
 public class ServerActivity extends AppCompatActivity
 {
 
-    public final int SERVER_PORT = 56625;
+    public final static int SERVER_PORT = 56625;
 
     private NetworkListener listener;
 
     private Button broadcastButton;
+    private Button startServerButton;
+    private boolean serverStarted = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -38,7 +36,8 @@ public class ServerActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_server);
 
-        StartListener();
+        processViews();
+
     }
 
     private void processViews()
@@ -46,6 +45,7 @@ public class ServerActivity extends AppCompatActivity
         if(broadcastButton == null )
         {
             broadcastButton = findViewById(R.id.broadcastButton);
+            startServerButton = findViewById(R.id.startServer);
 
             class Listener implements View.OnClickListener
             {
@@ -57,11 +57,25 @@ public class ServerActivity extends AppCompatActivity
                     {
                         BroadcastSelfIp();
                     }
+                    if(v == startServerButton)
+                    {
+                        if(!serverStarted)
+                        {
+                            StartListener();
+                            serverStarted = true;
+                        }
+                        else
+                        {
+                            listener.StopListener();
+                            serverStarted = false;
+                        }
+                    }
                 }
             }
 
             Listener listener = new Listener();
             broadcastButton.setOnClickListener(listener);
+            startServerButton.setOnClickListener(listener);
         }
     }
 
@@ -84,29 +98,60 @@ public class ServerActivity extends AppCompatActivity
 
     private void BroadcastSelfIp()
     {
+        String ip = getIPAddress(true);
+
+        BroadcastingClient broadcastingClient = new BroadcastingClient();
+        broadcastingClient.sendBroadcast(ip);
+    }
+
+    public static String getIPAddress(boolean useIPv4) {
         try
         {
-            InetAddress address = InetAddress.getLocalHost();
-            Log.e("Server", "Is on ip: " + address.getHostAddress());
-        } catch (UnknownHostException e)
-        {
-            e.printStackTrace();
-        }
+            List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface intf : interfaces) {
+                List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
+                for (InetAddress addr : addrs) {
+                    if (!addr.isLoopbackAddress()) {
+                        String sAddr = addr.getHostAddress();
+                        //boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr);
+                        boolean isIPv4 = sAddr.indexOf(':')<0;
+
+                        if (useIPv4) {
+                            if (isIPv4)
+                                return sAddr;
+                        } else {
+                            if (!isIPv4) {
+                                int delim = sAddr.indexOf('%'); // drop ip6 zone suffix
+                                return delim<0 ? sAddr.toUpperCase() : sAddr.substring(0, delim).toUpperCase();
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) { } // for now eat exceptions
+        return "";
     }
+
+
 
     class BroadcastingClient
     {
         private DatagramSocket socket = null;
 
+
+        @SuppressLint("StaticFieldLeak")
         public void sendBroadcast(String message)
         {
-            @SuppressLint("StaticFieldLeak") AsyncTask<String, Void, Void> task = new AsyncTask<String, Void, Void>()
+            Log.e("Server", "Starting broadcast async task...");
+
+            new AsyncTask<String, Void, Void>()
             {
                 @Override
                 protected Void doInBackground(String... strings)
                 {
                     try
                     {
+                        Log.e("Server", "Broadcasting: " + strings[0]);
                         broadcast(strings[0], InetAddress.getByName("255.255.255.255"));
                     } catch (UnknownHostException e)
                     {
@@ -114,7 +159,16 @@ public class ServerActivity extends AppCompatActivity
                     }
                     return null;
                 }
+
+                @Override
+                protected void onPostExecute(Void v)
+                {
+                    Log.e("Server", "Broadcasting task finished!" );
+                }
+
             }.execute(message);
+
+            Log.e("Server", "Broadcasting task launched...");
         }
 
         private void broadcast(String message, InetAddress address)

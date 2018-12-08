@@ -42,7 +42,8 @@ public class ModeChoose extends AppCompatActivity
                     }
                     if (v == generatorButton)
                     {
-                        Toast.makeText(getApplicationContext(), "Not implemented!", Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(getApplicationContext(), GeneratorActivity.class);
+                        startActivity(intent);
                     }
                 }
             }

@@ -3,4 +3,5 @@
     <string name="serverButton">Exit</string>
     <string name="generatorButton">Generator</string>
     <string name="broadcastButton">Broadcast</string>
+    <string name="start_server">Start server</string>
 </resources>

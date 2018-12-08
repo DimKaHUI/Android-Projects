@@ -34,6 +34,17 @@ public class NetworkListener
         }
     }
 
+    public void StopListener()
+    {
+        try
+        {
+            serverSocket.close();
+        } catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
     public void StartDataListener(StringDataHandler handler)
     {
         try
