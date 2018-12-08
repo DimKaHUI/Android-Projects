@@ -37,7 +37,7 @@ public class ModeChoose extends AppCompatActivity
                 {
                     if (v == serverButton)
                     {
-                        Intent intent = new Intent(getApplicationContext(), NetworkListener.class);
+                        Intent intent = new Intent(getApplicationContext(), ServerActivity.class);
                         startActivity(intent);
                     }
                     if (v == generatorButton)
