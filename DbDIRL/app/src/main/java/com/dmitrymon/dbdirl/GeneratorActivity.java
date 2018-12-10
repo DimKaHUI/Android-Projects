@@ -5,10 +5,13 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 public class GeneratorActivity extends AppCompatActivity
 {
 
-    NetworkListener listener;
+    private InetAddress serverAddress;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -16,23 +19,30 @@ public class GeneratorActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_generator);
 
-        StartListener();
-    }
-
-    private void StartListener()
-    {
-        listener = new NetworkListener(ServerActivity.SERVER_PORT);
-        listener.StartDataListener(new StringReceiver());
-
-        Toast.makeText(this, "Listener started!", Toast.LENGTH_SHORT).show();
-    }
-
-    private class StringReceiver implements NetworkListener.StringDataHandler
-    {
-        @Override
-        public void OnDataReceived(String data)
+        if(serverAddress == null)
         {
-            Log.e("Client", data);
+            ReceiveServerIp();
+        }
+    }
+
+    private void ReceiveServerIp()
+    {
+        Network.ReceiveBroadcast(ServerActivity.SERVER_PORT, this, new BroadcastReceiver());
+    }
+
+    private class BroadcastReceiver implements Network.MessageCallback
+    {
+
+        @Override
+        public void Receive(String result)
+        {
+            try
+            {
+                serverAddress = InetAddress.getByName(result);
+            } catch (UnknownHostException e)
+            {
+                e.printStackTrace();
+            }
         }
     }
 

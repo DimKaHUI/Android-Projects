@@ -16,19 +16,19 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
+import java.util.Objects;
 
 public class ServerActivity extends AppCompatActivity
 {
 
     public final static int SERVER_PORT = 56625;
 
-    private NetworkListener listener;
-
     private Button broadcastButton;
     private Button startServerButton;
-    private boolean serverStarted = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -37,7 +37,6 @@ public class ServerActivity extends AppCompatActivity
         setContentView(R.layout.activity_server);
 
         processViews();
-
     }
 
     private void processViews()
@@ -55,20 +54,11 @@ public class ServerActivity extends AppCompatActivity
                 {
                     if (v == broadcastButton)
                     {
-                        BroadcastSelfIp();
+                        SendIpBroadcast();
                     }
                     if(v == startServerButton)
                     {
-                        if(!serverStarted)
-                        {
-                            StartListener();
-                            serverStarted = true;
-                        }
-                        else
-                        {
-                            listener.StopListener();
-                            serverStarted = false;
-                        }
+
                     }
                 }
             }
@@ -79,30 +69,13 @@ public class ServerActivity extends AppCompatActivity
         }
     }
 
-    private void StartListener()
-    {
-        listener = new NetworkListener(SERVER_PORT);
-        listener.StartDataListener(new StringReceiver());
-
-        Toast.makeText(this, "Listener started!", Toast.LENGTH_SHORT).show();
-    }
-
-    private class StringReceiver implements NetworkListener.StringDataHandler
-    {
-        @Override
-        public void OnDataReceived(String data)
-        {
-            Log.e("Server", data);
-        }
-    }
-
-    private void BroadcastSelfIp()
+    private void SendIpBroadcast()
     {
         String ip = getIPAddress(true);
 
-        BroadcastingClient broadcastingClient = new BroadcastingClient();
-        broadcastingClient.sendBroadcast(ip);
+        Network.SendBroadcast(ip, SERVER_PORT, this);
     }
+
 
     public static String getIPAddress(boolean useIPv4) {
         try
@@ -133,65 +106,5 @@ public class ServerActivity extends AppCompatActivity
     }
 
 
-
-    class BroadcastingClient
-    {
-        private DatagramSocket socket = null;
-
-
-        @SuppressLint("StaticFieldLeak")
-        public void sendBroadcast(String message)
-        {
-            Log.e("Server", "Starting broadcast async task...");
-
-            new AsyncTask<String, Void, Void>()
-            {
-                @Override
-                protected Void doInBackground(String... strings)
-                {
-                    try
-                    {
-                        Log.e("Server", "Broadcasting: " + strings[0]);
-                        broadcast(strings[0], InetAddress.getByName("255.255.255.255"));
-                    } catch (UnknownHostException e)
-                    {
-                        e.printStackTrace();
-                    }
-                    return null;
-                }
-
-                @Override
-                protected void onPostExecute(Void v)
-                {
-                    Log.e("Server", "Broadcasting task finished!" );
-                }
-
-            }.execute(message);
-
-            Log.e("Server", "Broadcasting task launched...");
-        }
-
-        private void broadcast(String message, InetAddress address)
-        {
-            try
-            {
-                socket = new DatagramSocket();
-                socket.setBroadcast(true);
-
-                byte[] buffer = message.getBytes();
-
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, SERVER_PORT);
-                socket.send(packet);
-                socket.close();
-            } catch (SocketException e)
-            {
-                e.printStackTrace();
-            } catch (IOException e)
-            {
-                e.printStackTrace();
-            }
-
-        }
-    }
 
 }
