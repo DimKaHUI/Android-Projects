@@ -25,10 +25,12 @@ import java.util.Objects;
 public class ServerActivity extends AppCompatActivity
 {
 
-    public final static int SERVER_PORT = 56625;
-
     private Button broadcastButton;
     private Button startServerButton;
+
+    private Protocol protocol;
+
+    private ArrayList<String> clientList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -36,13 +38,46 @@ public class ServerActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_server);
 
+        processProtocol();
+
         processViews();
+    }
+
+    private void processProtocol()
+    {
+        if(protocol == null)
+        {
+            protocol = new Protocol(this, true);
+            protocol.setGeneratorAnswerCallback(new Protocol.ParameterlessCallback()
+            {
+                @Override
+                public void Callback(String sender)
+                {
+                    if(!clientList.contains(sender))
+                    {
+                        clientList.add(sender);
+                        Log.e("Server", "Generator responded!");
+                    }
+                }
+            });
+
+            protocol.setGeneratorFinishedCallback(new Protocol.ParameterlessCallback()
+            {
+                @Override
+                public void Callback(String sender)
+                {
+                    clientList.remove(sender);
+                    Log.e("Server", "Generator finished!");
+                }
+            });
+        }
     }
 
     private void processViews()
     {
         if(broadcastButton == null )
         {
+
             broadcastButton = findViewById(R.id.broadcastButton);
             startServerButton = findViewById(R.id.startServer);
 
@@ -54,11 +89,11 @@ public class ServerActivity extends AppCompatActivity
                 {
                     if (v == broadcastButton)
                     {
-                        SendIpBroadcast();
+                        protocol.SendIpBroadcast();
                     }
                     if(v == startServerButton)
                     {
-
+                        protocol.StartListening();
                     }
                 }
             }
@@ -67,42 +102,6 @@ public class ServerActivity extends AppCompatActivity
             broadcastButton.setOnClickListener(listener);
             startServerButton.setOnClickListener(listener);
         }
-    }
-
-    private void SendIpBroadcast()
-    {
-        String ip = getIPAddress(true);
-
-        Network.SendBroadcast(ip, SERVER_PORT, this);
-    }
-
-
-    public static String getIPAddress(boolean useIPv4) {
-        try
-        {
-            List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
-            for (NetworkInterface intf : interfaces) {
-                List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
-                for (InetAddress addr : addrs) {
-                    if (!addr.isLoopbackAddress()) {
-                        String sAddr = addr.getHostAddress();
-                        //boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr);
-                        boolean isIPv4 = sAddr.indexOf(':')<0;
-
-                        if (useIPv4) {
-                            if (isIPv4)
-                                return sAddr;
-                        } else {
-                            if (!isIPv4) {
-                                int delim = sAddr.indexOf('%'); // drop ip6 zone suffix
-                                return delim<0 ? sAddr.toUpperCase() : sAddr.substring(0, delim).toUpperCase();
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (Exception ignored) { } // for now eat exceptions
-        return "";
     }
 
 
