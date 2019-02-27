@@ -39,6 +39,7 @@ public class GeneratorActivity extends AppCompatActivity
             try
             {
                 serverAddress = InetAddress.getByName(result);
+                Toast.makeText(getApplicationContext(), result, Toast.LENGTH_SHORT).show();
             } catch (UnknownHostException e)
             {
                 e.printStackTrace();

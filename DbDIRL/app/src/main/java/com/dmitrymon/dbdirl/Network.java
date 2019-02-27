@@ -63,7 +63,7 @@ public class Network
 
                     socket.connect(getBroadcastAddress(context), port);
                     socket.setBroadcast(true);
-                    byte[] buffer = new byte[1024];
+                    byte[] buffer = new byte[12];
                     DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                     socket.receive(packet);
                     result = new String(buffer);
