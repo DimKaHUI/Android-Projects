@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">OwncraftDialog</string>
+    <string name="service_error">Service is unavailable now! Try again later!</string>
+    <string name="service_ok">Session was started successfully!</string>
+    <string name="server_name" translatable="false">Owncraft health</string>
+    <string name="user_name_ui">You</string>
+    <string name="permission_error">was denied!</string>
+    <string name="ui_text_sendbutton">Send</string>
+</resources>
