@@ -41,7 +41,7 @@ public class PasswordProcessor
         MessageDigest md = MessageDigest.getInstance("MD5");
         byte[] strBytes = str.getBytes();
         byte[] hash = md.digest(strBytes);
-        Log.i("HASH","Source string: " + str + ", bytes: " + ToString(strBytes) + ", hash: " + ToString(hash));
+        //Log.i("HASH","Source string: " + str + ", bytes: " + ToString(strBytes) + ", hash: " + ToString(hash));
         return hash;
     }
 
