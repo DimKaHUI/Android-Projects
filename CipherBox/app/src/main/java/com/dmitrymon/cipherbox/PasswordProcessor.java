@@ -1,7 +1,10 @@
 package com.dmitrymon.cipherbox;
 
+import android.util.Log;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.logging.Logger;
 
 public class PasswordProcessor
 {
@@ -9,8 +12,7 @@ public class PasswordProcessor
     {
         try
         {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            return md.digest(password.getBytes());
+            return GetStringHash(password);
         }
         catch (NoSuchAlgorithmException e)
         {
@@ -24,8 +26,7 @@ public class PasswordProcessor
     {
         try
         {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            return md.digest(iv.getBytes());
+            return GetStringHash(iv);
         }
         catch (NoSuchAlgorithmException e)
         {
@@ -34,4 +35,27 @@ public class PasswordProcessor
 
         return null;
     }
+
+    private static byte[] GetStringHash(String str) throws NoSuchAlgorithmException
+    {
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        byte[] strBytes = str.getBytes();
+        byte[] hash = md.digest(strBytes);
+        Log.i("HASH","Source string: " + str + ", bytes: " + ToString(strBytes) + ", hash: " + ToString(hash));
+        return hash;
+    }
+
+    private static String ToString(byte[] bytes)
+    {
+        StringBuilder builder = new StringBuilder();
+
+        for (byte b : bytes)
+        {
+            builder.append(b & 0xFF).append(' ');
+        }
+
+        return builder.toString();
+    }
+
+
 }
