@@ -22,6 +22,8 @@ import android.widget.LinearLayout;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class MenuActivity extends Activity
@@ -33,6 +35,7 @@ public class MenuActivity extends Activity
     private Button loginButton;
     private File[] fileList;
     private String[] decryptedFileNames;
+    private boolean[] successfulDecryptionList;
     private File extracted;
 
 
@@ -192,10 +195,14 @@ public class MenuActivity extends Activity
         if (fileList != null && fileList.length != 0)
         {
             decryptFileNames();
+            SortFiles();
             for (int i = 0; i < fileList.length; i++)
             {
-                View element = generateView(fileList[i], decryptedFileNames[i]);
-                linearLayout.addView(element);
+                if(successfulDecryptionList[i])
+                {
+                    View element = generateView(fileList[i], decryptedFileNames[i]);
+                    linearLayout.addView(element);
+                }
             }
         }
     }
@@ -247,10 +254,26 @@ public class MenuActivity extends Activity
     void decryptFileNames()
     {
         // Using Shell sort
-        String[] decryptedNames = new String[fileList.length];
+        /*String[] decryptedNames = new String[fileList.length];
         for(int i = 0; i < decryptedNames.length; i++)
-            decryptedNames[i] = FileProcessingActivity.GetDecryptedName(fileList[i], keyBytes, ivBytes);
+            decryptedNames[i] = FileProcessingActivity.GetDecryptedName(fileList[i], keyBytes, ivBytes);*/
 
+        ArrayList<String> decryptedNamesList = new ArrayList<>();
+        successfulDecryptionList = new boolean[fileList.length];
+        for (int i = 0; i < fileList.length; i++)
+        {
+            File fileName = fileList[i];
+            String decryptedName = FileProcessingActivity.GetDecryptedName(fileName, keyBytes, ivBytes);
+            decryptedNamesList.add(decryptedName);
+            successfulDecryptionList[i] = !decryptedName.startsWith(FileProcessingActivity.FILENAME_ENCRYPTED_PREFIX);
+        }
+
+        decryptedFileNames = new String[decryptedNamesList.size()];
+        decryptedNamesList.toArray(decryptedFileNames);
+    }
+
+    void SortFiles()
+    {
         class swapCallback implements ShellSort.SwapCallback
         {
             @Override
@@ -259,14 +282,25 @@ public class MenuActivity extends Activity
                 File tmp = fileList[b];
                 fileList[b] = fileList[a];
                 fileList[a] = tmp;
+
+                boolean successTmp = successfulDecryptionList[b];
+                successfulDecryptionList[b] = successfulDecryptionList[a];
+                successfulDecryptionList[a] = successTmp;
             }
         }
+
+        ArrayList<String> namesList = new ArrayList<>();
+        for (int i = 0; i < fileList.length; i++)
+        {
+            namesList.add(decryptedFileNames[i]);
+        }
+
         ShellSort.Comparator<String> comparator = new ShellSort.ComparatorCollection.StringComparator(true);
         ShellSort<String> sorter = new ShellSort<>(comparator);
         sorter.setSwapCallback(new swapCallback());
-        sorter.sort(decryptedNames);
+        sorter.sort(namesList);
 
-        decryptedFileNames = decryptedNames;
+        namesList.toArray(decryptedFileNames);
     }
 
     class ButtonListener implements View.OnClickListener

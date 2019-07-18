@@ -1,5 +1,7 @@
 package com.dmitrymon.cipherbox;
 
+import java.util.List;
+
 public class ShellSort<T>
 {
     public static class ComparatorCollection
@@ -73,9 +75,9 @@ public class ShellSort<T>
         swapCallback = callback;
     }
 
-    public void sort(T[] arr)
+    public void sort(List<T> arr)
     {
-        int increment = arr.length / 2;
+        int increment = arr.size() / 2;
         while(increment >= 1)
         {
             for(int startInd = 0; startInd < increment; startInd++)
@@ -87,19 +89,19 @@ public class ShellSort<T>
         }
     }
 
-    private void insertionSort(T[] arr, int start, int inc)
+    private void insertionSort(List<T> arr, int start, int inc)
     {
-        for(int i = start; i< arr.length - 1; i += inc)
+        for(int i = start; i< arr.size() - 1; i += inc)
         {
-            for (int j = Math.min(i + inc, arr.length - 1); j - inc >= 0; j -= inc)
+            for (int j = Math.min(i + inc, arr.size() - 1); j - inc >= 0; j -= inc)
             {
-                T a = arr[j - inc];
-                T b = arr[j];
+                T a = arr.get(j - inc);
+                T b = arr.get(j);
                 Comparator.Result compareResult = comparator.compare(a, b);
                 if(compareResult == Comparator.Result.GREATER)
                 {
-                    arr[j] = a;
-                    arr[j - inc] = b;
+                    arr.set(j, a);
+                    arr.set(j - inc, b);
                     if(swapCallback != null)
                     {
                         swapCallback.onSwap(j, j - inc);

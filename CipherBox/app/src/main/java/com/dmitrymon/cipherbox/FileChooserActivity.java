@@ -13,6 +13,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 
 import java.io.File;
+import java.util.ArrayList;
 
 public class FileChooserActivity extends Activity
 {
@@ -121,9 +122,11 @@ public class FileChooserActivity extends Activity
     void sortFilesByName()
     {
         // Using Shell sort
-        String[] names = new String[listOfFiles.length];
-        for(int i = 0; i < names.length; i++)
-            names[i] = listOfFiles[i].getName();
+        //String[] names = new String[listOfFiles.length];
+        ArrayList<String> names = new ArrayList<>();
+        for(int i = 0; i < listOfFiles.length; i++)
+            names.add(listOfFiles[i].getName());
+            //names[i] = listOfFiles[i].getName();
 
         class swapCallback implements ShellSort.SwapCallback
         {
@@ -140,7 +143,8 @@ public class FileChooserActivity extends Activity
         sorter.setSwapCallback(new swapCallback());
         sorter.sort(names);
 
-        fileNames = names;
+        fileNames = new String[names.size()];
+        names.toArray(fileNames);
     }
 
     @SuppressLint("AppCompatCustomView")
