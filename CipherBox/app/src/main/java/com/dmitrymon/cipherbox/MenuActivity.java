@@ -191,7 +191,7 @@ public class MenuActivity extends Activity
 
         if (fileList != null && fileList.length != 0)
         {
-            sortFilesByName();
+            decryptFileNames();
             for (int i = 0; i < fileList.length; i++)
             {
                 View element = generateView(fileList[i], decryptedFileNames[i]);
@@ -244,7 +244,7 @@ public class MenuActivity extends Activity
         return button;
     }
 
-    void sortFilesByName()
+    void decryptFileNames()
     {
         // Using Shell sort
         String[] decryptedNames = new String[fileList.length];
